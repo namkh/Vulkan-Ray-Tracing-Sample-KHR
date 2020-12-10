@@ -1,0 +1,213 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Example">
+      <UniqueIdentifier>{23ffaa6c-5fac-4064-92d9-a06d0467ac54}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Example\Device">
+      <UniqueIdentifier>{ffb3b6bf-2383-431c-a8b2-70c139ec639c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Example\RayTracing">
+      <UniqueIdentifier>{4d5729a1-3cfe-4528-bc6c-559d67ad7b71}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Example\Resource">
+      <UniqueIdentifier>{b3a48290-fa40-4762-94dd-ad995e948762}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Example\Object">
+      <UniqueIdentifier>{e8ad1d64-8d55-476f-9cdf-f090e6a81c1f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Example\Utility">
+      <UniqueIdentifier>{077e7f03-5a2b-4d88-ab25-88897df7f5e8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Example\Common">
+      <UniqueIdentifier>{c6871d36-8877-4feb-92f1-7032e6a4b2a3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="CommandBuffers.cpp">
+      <Filter>Example\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="CoreEventManager.cpp">
+      <Filter>Example\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="DeviceBuffers.cpp">
+      <Filter>Example\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="Fence.cpp">
+      <Filter>Example\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="GeometryContainer.cpp">
+      <Filter>Example\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="MaterialContainer.cpp">
+      <Filter>Example\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="SimpleGeometry.cpp">
+      <Filter>Example\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderContainer.cpp">
+      <Filter>Example\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="SimpleMaterial.cpp">
+      <Filter>Example\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="SimpleShader.cpp">
+      <Filter>Example\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="SimpleTexture.cpp">
+      <Filter>Example\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="TextureContainer.cpp">
+      <Filter>Example\Resource</Filter>
+    </ClCompile>
+    <ClCompile Include="GlobalTimer.cpp">
+      <Filter>Example\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="PipelineBarrier.cpp">
+      <Filter>Example\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="VulkanDeviceResources.cpp">
+      <Filter>Example\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="RayTracer.cpp">
+      <Filter>Example\RayTracing</Filter>
+    </ClCompile>
+    <ClCompile Include="RTAccelerationStructure.cpp">
+      <Filter>Example\RayTracing</Filter>
+    </ClCompile>
+    <ClCompile Include="RTPipeline.cpp">
+      <Filter>Example\RayTracing</Filter>
+    </ClCompile>
+    <ClCompile Include="RTPipelineResources.cpp">
+      <Filter>Example\RayTracing</Filter>
+    </ClCompile>
+    <ClCompile Include="RTShaderBindingTable.cpp">
+      <Filter>Example\RayTracing</Filter>
+    </ClCompile>
+    <ClCompile Include="SimpleRenderObject.cpp">
+      <Filter>Example\Object</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderObjectContainer.cpp">
+      <Filter>Example\Object</Filter>
+    </ClCompile>
+    <ClCompile Include="SphericalCoordinateMovementCamera.cpp">
+      <Filter>Example\Object</Filter>
+    </ClCompile>
+    <ClCompile Include="Win32Application.cpp">
+      <Filter>Example\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Utils.cpp">
+      <Filter>Example\Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="volk.c">
+      <Filter>Example\Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="VulkanRayTracingExample.cpp">
+      <Filter>Example</Filter>
+    </ClCompile>
+    <ClCompile Include="Main.cpp">
+      <Filter>Example</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CommandBuffers.h">
+      <Filter>Example\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="CoreEventManager.h">
+      <Filter>Example\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="DeviceBuffers.h">
+      <Filter>Example\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Events.h">
+      <Filter>Example\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="GeometryContainer.h">
+      <Filter>Example\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="MaterialContainer.h">
+      <Filter>Example\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderContainer.h">
+      <Filter>Example\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="SimpleGeometry.h">
+      <Filter>Example\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="SimpleMaterial.h">
+      <Filter>Example\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="SimpleShader.h">
+      <Filter>Example\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="SimpleTexture.h">
+      <Filter>Example\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="GlobalTimer.h">
+      <Filter>Example\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Fence.h">
+      <Filter>Example\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="PipelineBarrier.h">
+      <Filter>Example\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="VulkanDeviceResources.h">
+      <Filter>Example\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="RayTracer.h">
+      <Filter>Example\RayTracing</Filter>
+    </ClInclude>
+    <ClInclude Include="RTAccelerationStructure.h">
+      <Filter>Example\RayTracing</Filter>
+    </ClInclude>
+    <ClInclude Include="RTPipeline.h">
+      <Filter>Example\RayTracing</Filter>
+    </ClInclude>
+    <ClInclude Include="RTPipelineResources.h">
+      <Filter>Example\RayTracing</Filter>
+    </ClInclude>
+    <ClInclude Include="RTShaderBindingTable.h">
+      <Filter>Example\RayTracing</Filter>
+    </ClInclude>
+    <ClInclude Include="SphericalCoordinateMovementCamera.h">
+      <Filter>Example\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="SimpleRenderObject.h">
+      <Filter>Example\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderObjectContainer.h">
+      <Filter>Example\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="GlobalSystemValues.h">
+      <Filter>Example\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="ExternalLib.h">
+      <Filter>Example\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="ExampleAppBase.h">
+      <Filter>Example\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Win32Application.h">
+      <Filter>Example\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Utils.h">
+      <Filter>Example\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Singleton.h">
+      <Filter>Example\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Commands.h">
+      <Filter>Example\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="TextureContainer.h">
+      <Filter>Example\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="volk.h">
+      <Filter>Example\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="VulkanRayTracingExample.h">
+      <Filter>Example</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

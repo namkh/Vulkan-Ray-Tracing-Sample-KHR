@@ -1,0 +1,59 @@
+#version 460
+
+#extension GL_EXT_ray_tracing : enable
+#extension GL_GOOGLE_include_directive : enable
+
+#include "Common.glsl"
+
+#define NUM_SAMPLES 8
+
+layout (binding=0, set=0) uniform accelerationStructureEXT topLevelAs;
+layout (binding=1, set=0, rgba8) uniform image2D image;
+layout (binding=2, set=0) uniform GlobalConstantBuffer
+{
+    mat4 matViewInv;
+    mat4 matProjInv;
+    vec3 lightDir;
+    float padding0;
+} globalConstants;
+
+layout(location=0) rayPayloadEXT RayPayloadData payload;
+
+void main()
+{ 
+    uint randSeed = tea(gl_LaunchIDEXT.y * gl_LaunchSizeEXT.x + gl_LaunchIDEXT.x, 1);
+
+    vec3 accumulatedHitValue = vec3(0.0f);
+
+    for(int i = 0; i < NUM_SAMPLES; i++)
+    {
+        float r1 = rnd(randSeed);
+        float r2 = rnd(randSeed);
+
+        vec2 subPixelJittet = i == 0 ? vec2(0.5, 0.5) : vec2(r1, r2);
+
+        const vec2 pixelCenterPos = vec2(gl_LaunchIDEXT.xy) + subPixelJittet;//samplingOffsets[i];
+        const vec2 uvSpacePos = pixelCenterPos * (1.0f / vec2(gl_LaunchSizeEXT.xy));
+        vec2 clipSpaceCenter = uvSpacePos * 2.0f - 1.0f;
+
+        vec4 origin = globalConstants.matViewInv * vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        vec4 target = globalConstants.matProjInv * vec4(clipSpaceCenter.x, clipSpaceCenter.y, 1.0f, 1.0f);
+        vec4 direction = normalize(globalConstants.matViewInv * vec4(normalize(target.xyz), 0));
+
+        float min = 0.0001f;
+        float max = 10000.0f;
+    
+        payload.hitColor = vec3(1.0f);
+        payload.refectColor = vec3(0.0f);
+        payload.traceDepth = 0;
+        payload.indexOfRefraction = IOR_AIR;
+
+        traceRayEXT(topLevelAs, gl_RayFlagsCullBackFacingTrianglesEXT, 0xFF, 0, 0, 0, origin.xyz, min, direction.xyz, max, 0);
+
+        accumulatedHitValue += payload.hitColor;
+    }
+
+    payload.hitColor = accumulatedHitValue  / NUM_SAMPLES;
+
+    imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(payload.hitColor, 1.0f));
+}
