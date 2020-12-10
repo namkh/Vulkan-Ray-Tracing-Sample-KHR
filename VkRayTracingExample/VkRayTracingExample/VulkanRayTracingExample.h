@@ -31,6 +31,7 @@ public:
 private:
 
 	SphericalCoordinateMovementCamera m_camera;
+	SimpleCubmapTexture m_envCubmapTexture;
 
 	std::vector<VkSemaphore> m_imageAcquiredSemaphore = {};
 	std::vector<VkSemaphore> m_renderCompleteSemaphore = {};

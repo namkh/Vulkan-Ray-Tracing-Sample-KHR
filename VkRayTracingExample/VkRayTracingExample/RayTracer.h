@@ -18,6 +18,7 @@ public:
 
 	void LoadRayGenShader(std::string& rgenFilePath);
 	void LoadMissShader(std::string& missFilePath);
+	void SetEnvCubemap(SimpleCubmapTexture* envCubmapTexture) { m_envCubmapTexture = envCubmapTexture; }
 
 	bool Build();
 
@@ -37,7 +38,7 @@ private:
 	VkCommandPool m_commandPool = VK_NULL_HANDLE;
 
 	RtTargetImageBuffer m_rtTargetImage;
-	SimpleCubmapTexture m_envCubmapTexture;
+	SimpleCubmapTexture* m_envCubmapTexture;
 
 	RTPipelineResources m_pipelineResources = {};
 	RTPipeline m_pipeline = {};

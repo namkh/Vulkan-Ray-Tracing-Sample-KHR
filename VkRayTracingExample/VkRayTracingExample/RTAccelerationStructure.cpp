@@ -229,7 +229,7 @@ void BottomLevelAsGroup::Update(VkCommandBuffer commandBuffer)
 	if (m_instanceListChanged)
 	{
 		RefreshInstanceBufferDatas();
-		RefreshBlasList();
+		RefreshBlasList(true);
 	}
 }
 

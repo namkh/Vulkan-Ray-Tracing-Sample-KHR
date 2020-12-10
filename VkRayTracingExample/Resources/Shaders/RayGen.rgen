@@ -43,7 +43,7 @@ void main()
         float min = 0.0001f;
         float max = 10000.0f;
     
-        payload.hitColor = vec3(1.0f);
+        payload.hitColor = vec3(1.0f, 0.0f, 0.0f);
         payload.refectColor = vec3(0.0f);
         payload.traceDepth = 0;
         payload.indexOfRefraction = IOR_AIR;

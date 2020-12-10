@@ -79,10 +79,13 @@ void MaterialContainer::RefreshIndexTable()
 //머트리얼 하드코딩 작성
 void ExampleMaterialCreateCode::CreateExampleMaterial(ExampleMaterialType type, SimpleMaterial* mat)
 {
-	static std::string DEFAULT_CLOSET_HIT_SHADER_PATH = "../Resources/Shaders/Hit.spr";
+	static std::string COMMON_CLOSET_HIT_SHADER_PATH = "../Resources/Shaders/Hit.spr";
+	static std::string DEFAULT_CLOSET_HIT_SHADER_PATH = "../Resources/Shaders/Hit_Default.spr";
+	static std::string TRANSPARENT_CLOSET_HIT_SHADER_PATH = "../Resources/Shaders/Hit_Transparent.spr";
+	static std::string REFRACT_CLOSET_HIT_SHADER_PATH = "../Resources/Shaders/Hit_Refract.spr";
 	static std::string DEFAULT_ANY_HIT_SHADER_PATH = "";
 	static std::string DEFAULT_INTERSECTION_SHADER_PATH = "";
-
+	
 	mat->m_materialType = type;
 	switch (type)
 	{
@@ -95,6 +98,7 @@ void ExampleMaterialCreateCode::CreateExampleMaterial(ExampleMaterialType type, 
 			mat->m_roughnessTex = gTexContainer.CreateTexture("../Resources/Textures/Metal1/metal1_roughness.png");
 			mat->m_metallicTex = gTexContainer.CreateTexture("../Resources/Textures/Metal1/metal1_metallic.png");
 			mat->m_ambientOcclusionTex = gTexContainer.CreateTexture("../Resources/Textures/Metal1/metal1_ao.png");
+			mat->m_hitShaderGroup = gHitGroupContainer.CreateHitGroup(DEFAULT_CLOSET_HIT_SHADER_PATH, DEFAULT_ANY_HIT_SHADER_PATH, DEFAULT_INTERSECTION_SHADER_PATH);
 			break;
 		case ExampleMaterialType::EXAMPLE_MAT_TYPE_METAL2 :
 			mat->m_color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -105,6 +109,7 @@ void ExampleMaterialCreateCode::CreateExampleMaterial(ExampleMaterialType type, 
 			mat->m_roughnessTex = gTexContainer.CreateTexture("../Resources/Textures/Metal2/metal2_roughness.png");
 			mat->m_metallicTex = gTexContainer.CreateTexture("../Resources/Textures/Metal2/metal2_metallic.png");
 			mat->m_ambientOcclusionTex = gTexContainer.CreateTexture("../Resources/Textures/Metal2/metal2_ao.png");
+			mat->m_hitShaderGroup = gHitGroupContainer.CreateHitGroup(DEFAULT_CLOSET_HIT_SHADER_PATH, DEFAULT_ANY_HIT_SHADER_PATH, DEFAULT_INTERSECTION_SHADER_PATH);
 			break;
 		case ExampleMaterialType::EXAMPLE_MAT_TYPE_METAL3 :
 			mat->m_mateiralTypeIndex = static_cast<uint32_t>(EMaterialType::SURFACE_TYPE_DEFAULT);
@@ -114,6 +119,7 @@ void ExampleMaterialCreateCode::CreateExampleMaterial(ExampleMaterialType type, 
 			mat->m_roughnessTex = gTexContainer.CreateTexture("../Resources/Textures/Metal3/metal3_roughness.png");
 			mat->m_metallicTex = gTexContainer.CreateTexture("../Resources/Textures/Metal3/metal3_metallic.png");
 			mat->m_ambientOcclusionTex = gTexContainer.CreateTexture("../Resources/Textures/Metal3/metal3_ao.png");
+			mat->m_hitShaderGroup = gHitGroupContainer.CreateHitGroup(DEFAULT_CLOSET_HIT_SHADER_PATH, DEFAULT_ANY_HIT_SHADER_PATH, DEFAULT_INTERSECTION_SHADER_PATH);
 			break;
 		case ExampleMaterialType::EXAMPLE_MAT_TYPE_GLASS:
 			mat->m_mateiralTypeIndex = static_cast<uint32_t>(EMaterialType::MATERIAL_TYPE_TRANSPARENT_REFRACT);
@@ -122,6 +128,7 @@ void ExampleMaterialCreateCode::CreateExampleMaterial(ExampleMaterialType type, 
 			mat->m_normalTex = gTexContainer.CreateTexture("../Resources/Textures/Glass/glass_normal.png");
 			mat->m_roughnessTex = gTexContainer.CreateTexture("../Resources/Textures/Glass/glass_roughness.png");
 			mat->m_metallicTex = gTexContainer.CreateTexture("../Resources/Textures/Glass/glass_metallic.png");
+			mat->m_hitShaderGroup = gHitGroupContainer.CreateHitGroup(REFRACT_CLOSET_HIT_SHADER_PATH, DEFAULT_ANY_HIT_SHADER_PATH, DEFAULT_INTERSECTION_SHADER_PATH);
 			break;
 		case ExampleMaterialType::EXAMPLE_MAT_TYPE_PAINT_TRANSPARENT:
 			mat->m_mateiralTypeIndex = static_cast<uint32_t>(EMaterialType::SURFACE_TYPE_TRANSPARENT);
@@ -131,6 +138,7 @@ void ExampleMaterialCreateCode::CreateExampleMaterial(ExampleMaterialType type, 
 			mat->m_normalTex = gTexContainer.CreateTexture("../Resources/Textures/Paint/Paint_normal.png");
 			mat->m_roughnessTex = gTexContainer.CreateTexture("../Resources/Textures/Paint/Paint_roughness.png");
 			mat->m_metallicTex = gTexContainer.CreateTexture("../Resources/Textures/Paint/Paint_metallic.png");
+			mat->m_hitShaderGroup = gHitGroupContainer.CreateHitGroup(TRANSPARENT_CLOSET_HIT_SHADER_PATH, DEFAULT_ANY_HIT_SHADER_PATH, DEFAULT_INTERSECTION_SHADER_PATH);
 			break;
 
 		case ExampleMaterialType::EXAMPLE_MAT_TYPE_PLATE:
@@ -141,8 +149,9 @@ void ExampleMaterialCreateCode::CreateExampleMaterial(ExampleMaterialType type, 
 			mat->m_roughnessTex = gTexContainer.CreateTexture("../Resources/Textures/Plate/Plate_roughness.png");
 			mat->m_metallicTex = gTexContainer.CreateTexture("../Resources/Textures/Plate/Plate_metallic.png");
 			mat->m_ambientOcclusionTex = gTexContainer.CreateTexture("../Resources/Textures/Plate/Plate_ao.png");
+			mat->m_hitShaderGroup = gHitGroupContainer.CreateHitGroup(DEFAULT_CLOSET_HIT_SHADER_PATH, DEFAULT_ANY_HIT_SHADER_PATH, DEFAULT_INTERSECTION_SHADER_PATH);
 			mat->m_uvScale = 4.0f;
 			break;
 	}
-	mat->m_hitShaderGroup = gHitGroupContainer.CreateHitGroup(DEFAULT_CLOSET_HIT_SHADER_PATH, DEFAULT_ANY_HIT_SHADER_PATH, DEFAULT_INTERSECTION_SHADER_PATH);
+	
 }

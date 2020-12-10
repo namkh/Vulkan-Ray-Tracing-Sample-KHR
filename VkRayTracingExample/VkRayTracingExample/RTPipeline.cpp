@@ -95,7 +95,7 @@ bool RTPipeline::Build(VkPipelineLayout pipelineLayout)
 	rayTracingPipeLineCreateInfo.pStages = shaderStageCreateInfos.data();
 	rayTracingPipeLineCreateInfo.groupCount = static_cast<uint32_t>(m_shaderGroupCreateInfos.size());
 	rayTracingPipeLineCreateInfo.pGroups = m_shaderGroupCreateInfos.data();
-	rayTracingPipeLineCreateInfo.maxRecursionDepth = 5;
+	rayTracingPipeLineCreateInfo.maxRecursionDepth = 4;
 	rayTracingPipeLineCreateInfo.layout = pipelineLayout;
 	rayTracingPipeLineCreateInfo.libraries = pipelineLibraryCreateInfo;
 

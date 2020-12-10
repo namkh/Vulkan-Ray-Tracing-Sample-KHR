@@ -25,6 +25,20 @@ bool VulkanRayTracingExample::Initialize()
 	m_camera.SetZoomSensitivity(10.0f);
 	m_camera.UseInputEvents(true);
 
+	std::vector<std::string> cubemapFilePathList =
+	{
+		"../Resources/Textures/Sky/left.jpg",
+		"../Resources/Textures/Sky/right.jpg",
+		"../Resources/Textures/Sky/bottom.jpg",
+		"../Resources/Textures/Sky/top.jpg",
+		"../Resources/Textures/Sky/back.jpg",
+		"../Resources/Textures/Sky/front.jpg",
+	};
+	if (!m_envCubmapTexture.Initialize(cubemapFilePathList))
+	{
+		return false;
+	}
+
 	m_imageAcquiredSemaphore.resize(NUM_FRAMES);
 	m_renderCompleteSemaphore.resize(NUM_FRAMES);
 	m_drawFence.resize(NUM_FRAMES);
@@ -84,6 +98,7 @@ bool VulkanRayTracingExample::Initialize()
 	std::string defaultMissShaderFilePath = "../Resources/Shaders/Miss.spr";
 	std::string shadowMissShaderFilePath = "../Resources/Shaders/ShadowMiss.spr";
 	m_rayTracer.Initialize(m_width, m_height, gVkDeviceRes.GetBackbufferFormat());
+	m_rayTracer.SetEnvCubemap(&m_envCubmapTexture);
 	m_rayTracer.LoadRayGenShader(raygenShaderFilePath);
 	m_rayTracer.LoadMissShader(defaultMissShaderFilePath);
 	m_rayTracer.LoadMissShader(shadowMissShaderFilePath);
@@ -200,7 +215,7 @@ void VulkanRayTracingExample::Destroy()
 {
 	gVkDeviceRes.WaitForAllDeviceAction();
 	m_camera.Destroy();
-
+	m_envCubmapTexture.Destroy();
 	for (int i = 0; i < NUM_FRAMES; i++)
 	{
 		vkDestroySemaphore(gLogicalDevice, m_imageAcquiredSemaphore[i], NULL);
@@ -228,10 +243,10 @@ void VulkanRayTracingExample::UpdateTransformAnimation()
 	glm::vec3 pos3(15.0f, 0.0f, 0.0f);
 	glm::vec3 pos4(-15.0f, 0.0f, 0.0f);
 
-	glm::vec3 rotatedPos1 = glm::rotateY(pos1, GlobalTimer::Instance().GetTime());
-	glm::vec3 rotatedPos2 = glm::rotateY(pos2, GlobalTimer::Instance().GetTime());
-	glm::vec3 rotatedPos3 = glm::rotateY(pos3, GlobalTimer::Instance().GetTime());
-	glm::vec3 rotatedPos4 = glm::rotateY(pos4, GlobalTimer::Instance().GetTime());
+	glm::vec3 rotatedPos1 = glm::rotateY(pos1, GlobalTimer::Instance().GetTime() * 0.3f);
+	glm::vec3 rotatedPos2 = glm::rotateY(pos2, GlobalTimer::Instance().GetTime() * 0.3f);
+	glm::vec3 rotatedPos3 = glm::rotateY(pos3, GlobalTimer::Instance().GetTime() * 0.3f);
+	glm::vec3 rotatedPos4 = glm::rotateY(pos4, GlobalTimer::Instance().GetTime() * 0.3f);
 
 	glm::mat4 rotatedMat1 = glm::translate(glm::mat4(1.0f), rotatedPos1) * modelRotMat * modelScaleMat;
 	glm::mat4 rotatedMat2 = glm::translate(glm::mat4(1.0f), rotatedPos2) * modelRotMat * modelScaleMat;

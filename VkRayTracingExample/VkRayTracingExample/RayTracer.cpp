@@ -23,21 +23,6 @@ bool RayTracer::Initialize(uint32_t width, uint32_t height, VkFormat rtTargetFor
 		//rt target 생성실패 로깅
 		return false;
 	}
-
-	//앱에서 생성해서 등록하자
-	std::vector<std::string> cubemapFilePathList =
-	{
-		"../Resources/Textures/Sky/left.jpg",
-		"../Resources/Textures/Sky/right.jpg",
-		"../Resources/Textures/Sky/bottom.jpg",
-		"../Resources/Textures/Sky/top.jpg",
-		"../Resources/Textures/Sky/back.jpg",
-		"../Resources/Textures/Sky/front.jpg",
-	};
-	if (!m_envCubmapTexture.Initialize(cubemapFilePathList))
-	{
-		return false;
-	}
 	
 	if (!m_commandBufferContainer.Initialize(m_commandPool, 2))
 	{
@@ -107,8 +92,6 @@ void RayTracer::Destroy()
 	m_accelerationStructure.Destroy();
 	m_commandBufferContainer.Clear();
 
-	m_envCubmapTexture.Destroy();
-
 	m_rtTargetImage.Destroy();
 	if (m_commandPool != VK_NULL_HANDLE)
 	{
@@ -141,8 +124,8 @@ bool RayTracer::Build()
 	}
 
 	if (!m_pipelineResources.Build(m_accelerationStructure.GetTopLevelAs().GetAccelerationStructure(),
-										&m_rtTargetImage,
-										&m_envCubmapTexture))
+								   &m_rtTargetImage,
+								   m_envCubmapTexture))
 	{
 		//pipeline resource 생성 실패
 		return false;
