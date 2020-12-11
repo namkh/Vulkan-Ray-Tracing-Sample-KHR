@@ -33,6 +33,7 @@ bool SimpleShader::Load(ERTShaderType shaderType, std::string& shaderFilePath)
 				return true;
 			}
 		}
+		shaderFile.close();
 	}
 	return false;
 }

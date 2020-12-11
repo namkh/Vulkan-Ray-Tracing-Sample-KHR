@@ -16,6 +16,7 @@ public:
 public:
 	virtual bool Initialize() = 0;
 	virtual void Update(float timeDelta) = 0;
+	virtual void PreRender() = 0;
 	virtual void Render() = 0;
 	virtual void Destroy() = 0;
 

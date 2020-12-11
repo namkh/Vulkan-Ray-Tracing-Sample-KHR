@@ -1,6 +1,3 @@
-
-
-
 #include "GlobalTimer.h"
 #include "CoreEventManager.h"
 #include "ExampleAppBase.h"
@@ -8,6 +5,8 @@
 #include "Win32Application.h"
 #include "VulkanDeviceResources.h"
 #include "GlobalSystemValues.h"
+
+#include "Utils.h"
 
 
 #include <shellapi.h>
@@ -21,6 +20,8 @@ static bool g_appResizing = false;
 
 static int g_appWidth = 800;
 static int g_appHeight = 600;
+
+static int g_appStarted = false;
 
 static int g_prevMousePosX = 0;
 static int g_prevMousePosY = 0;
@@ -73,13 +74,20 @@ int Win32Application::Run(ExampleAppBase* pExample, HINSTANCE hInstance, int nCm
 	g_prevMousePosX = cursorPos.x;
 	g_prevMousePosY = cursorPos.y;
 
-	gVkDeviceRes.Initialize(hInstance, m_hwnd, pExample->GetWidth(), pExample->GetHeight(), pExample->UseRayTracing());
-
+	if (!gVkDeviceRes.Initialize(hInstance, m_hwnd, pExample->GetWidth(), pExample->GetHeight(), pExample->UseRayTracing()))
+	{
+		REPORT_WITH_SHUTDOWN(EReportType::REPORT_TYPE_ERROR, "Device resource create failed.");
+	}
+	
 	GlobalTimer::Instance().Initialize();
-	pExample->Initialize();
+	
+	if (!pExample->Initialize())
+	{
+		REPORT_WITH_SHUTDOWN(EReportType::REPORT_TYPE_ERROR, "Example app create failed.");
+	}
+	g_appStarted = true;
 
     MSG msg = {};
-	Sleep(100);
     while (msg.message != WM_QUIT)
     {
         // Process any messages in the queue.
@@ -95,6 +103,7 @@ int Win32Application::Run(ExampleAppBase* pExample, HINSTANCE hInstance, int nCm
 			{
 				gVkDeviceRes.RestoreDeviceIfDirtied();
 				pExample->Update(GlobalTimer::Instance().GetDeltaTime());
+				pExample->PreRender();
 				pExample->Render();
 			}
         }
@@ -125,8 +134,7 @@ LRESULT CALLBACK Win32Application::WindowProc(HWND hWnd, UINT message, WPARAM wP
 	}
 	break;
 	case WM_SIZE:
-	// 불칸 디바이스로 변경 굳이 디바이스 init인지 볼필요 없지 않나?? -_-
-	//	if (D3D12Device::Instance().IsInitialized())
+		if (g_appStarted)
 		{
 			g_appWidth = LOWORD(lParam);
 			g_appHeight = HIWORD(lParam);
@@ -138,7 +146,6 @@ LRESULT CALLBACK Win32Application::WindowProc(HWND hWnd, UINT message, WPARAM wP
 			}
 			else if (wParam == SIZE_MAXIMIZED)
 			{
-				//g_appPause = false;
 				if (!g_appMaximized)
 				{
 					ScreenSizeChangedEvent screenSizeChangedEvent(static_cast<float>(g_appWidth), static_cast<float>(g_appHeight));

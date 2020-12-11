@@ -14,6 +14,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
 {
 #if _DEBUG
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+	//_CrtSetBreakAlloc(1112);
 #endif
 	VulkanRayTracingExample example(L"helloVulkanApp", GlobalSystemValues::Instance().ScreenWidth, GlobalSystemValues::Instance().ScreenHeight, true);
 

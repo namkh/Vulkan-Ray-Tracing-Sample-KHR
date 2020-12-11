@@ -88,7 +88,7 @@ bool StructuredBufferData<ResourceType>::Initialzie(VkBufferUsageFlags bufferUsa
 {
 	if (m_isAllocated)
 	{
-		//자원이 이미 할당 되어있음을 로깅
+		REPORT(EReportType::REPORT_TYPE_WARN, "BufferData is already allocated.");
 		return false;
 	}
 	m_numDatas = numDatas;
@@ -99,7 +99,7 @@ bool StructuredBufferData<ResourceType>::Initialzie(VkBufferUsageFlags bufferUsa
 
 	if (m_numDatas < 1)
 	{
-		//데이터 카운트는 1이상이어야함
+		REPORT(EReportType::REPORT_TYPE_WARN, "The minimum size of an structured buffer is 1.");
 		return false;
 	}
 	
@@ -133,7 +133,6 @@ bool StructuredBufferData<ResourceType>::Resize(uint32_t numDatas)
 	Destroy();
 	if (!Initialzie(m_bufferUsage, m_memRequirementsMask, numDatas))
 	{
-		//버퍼 할당 실패를 로깅
 		return false;
 	}
 	return true;
@@ -171,7 +170,7 @@ bool StructuredBufferData<ResourceType>::CreateBuffer()
 	VkResult res = vkCreateBuffer(gLogicalDevice, &bufferCreateInfo, nullptr, &m_buffer);
 	if (res != VkResult::VK_SUCCESS)
 	{
-		//버퍼 생성 실패에 대한 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Buffer create failed.");
 		return false;
 	}
 	return true;
@@ -192,19 +191,19 @@ bool StructuredBufferData<ResourceType>::AllocateMemory()
 		m_memRequirementsMask,
 		&allocInfo.memoryTypeIndex))
 	{
-		//메모리 타입 없음을 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Not found device meory type.");
 		return false;
 	}
 
 	if (vkAllocateMemory(gLogicalDevice, &allocInfo, nullptr, &m_memory) != VkResult::VK_SUCCESS)
 	{
-		//디바이스 메모리 할당실패를 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Device memory allocation failed.");
 		return false;
 	}
 
 	if (vkBindBufferMemory(gLogicalDevice, m_buffer, m_memory, 0) != VkResult::VK_SUCCESS)
 	{
-		//버퍼 바인드 실패로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Buffer bind failed.");
 		return false;
 	}
 
@@ -225,21 +224,21 @@ void StructuredBufferData<ResourceType>::UpdateResource(ResourceType* srcData, u
 		}
 		else
 		{
-			//메모리 맵 실패 로그
+			REPORT(EReportType::REPORT_TYPE_WARN, "Buffer memory map failed");
 		}
 	}
 	else
 	{
-		//데이터가 사이즈가 맞지 않음을 로깅
+		REPORT(EReportType::REPORT_TYPE_WARN, "src buffer and dst buffer are have different size");
 	}
 }
 
 template <typename ResourceType>
 void StructuredBufferData<ResourceType>::UpdateResource(ResourceType& srcData, uint32_t dataIndex)
 {
-	if (dataIndex >= m_numDatas || dataIndex < 0)
+	if (dataIndex >= m_numDatas)
 	{
-		//데이터 업데이트 실패 로깅
+		REPORT(EReportType::REPORT_TYPE_WARN, "An invalid index was requested.");
 		return;
 	}
 
@@ -254,7 +253,7 @@ void StructuredBufferData<ResourceType>::UpdateResource(ResourceType& srcData, u
 	}
 	else
 	{
-		//메모리 맵 실패 로그
+		REPORT(EReportType::REPORT_TYPE_WARN, "Buffer memory map failed");
 	}
 }
 
@@ -265,7 +264,7 @@ void StructuredBufferData<ResourceType>::UpdateResource(ResourceType& srcData, s
 	{
 		if (updateIndices[i] >= m_numDatas)
 		{
-			//자원 범위를 넘어서는 인덱스를 가졌음을 로깅
+			REPORT(EReportType::REPORT_TYPE_WARN, "An invalid index was requested.");
 			return;
 		}
 	}
@@ -282,7 +281,7 @@ void StructuredBufferData<ResourceType>::UpdateResource(ResourceType& srcData, s
 	}
 	else
 	{
-		//메모리 맵 실패 로그
+		REPORT(EReportType::REPORT_TYPE_WARN, "Buffer memory map failed");
 	}
 	vkUnmapMemory(gLogicalDevice, m_memory);
 
@@ -355,14 +354,14 @@ bool RtBufferData<ResourceType>::CreateBuffer()
 	VkResult res = vkCreateBuffer(gLogicalDevice, &stagingBufferCreateInfo, nullptr, &m_stagingBuffer);
 	if (res != VkResult::VK_SUCCESS)
 	{
-		//버퍼 생성 실패에 대한 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Staging buffer create failed.");
 		return false;
 	}
 
 	res = vkCreateBuffer(gLogicalDevice, &deviceBufferCreateInfo, nullptr, &StructuredBufferData<ResourceType>::GetBuffer());
 	if (res != VkResult::VK_SUCCESS)
 	{
-		//버퍼 생성 실패에 대한 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Buffer create failed.");
 		return false;
 	}
 	return true;
@@ -395,7 +394,7 @@ bool RtBufferData<ResourceType>::AllocateMemory()
 																	VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 																	&stagingMemAllocInfo.memoryTypeIndex))
 	{
-		//메모리 타입 없음을 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Not found device meory type.");
 		return false;
 	}
 
@@ -403,31 +402,31 @@ bool RtBufferData<ResourceType>::AllocateMemory()
 																	VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 																	&deviceMemAllocInfo.memoryTypeIndex))
 	{
-		//메모리 타입 없음을 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Not found device meory type.");
 		return false;
 	}
 
 	if (vkAllocateMemory(gLogicalDevice, &stagingMemAllocInfo, nullptr, &m_stagingMemory))
 	{
-		//스테이징 메모리 할당실패를 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Device memory allocation failed.");
 		return false;
 	}
 
 	if (vkAllocateMemory(gLogicalDevice, &deviceMemAllocInfo, nullptr, &StructuredBufferData<ResourceType>::GetMemory()))
 	{
-		//디바이스 메모리 할당실패를 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Device memory allocation failed.");
 		return false;
 	}
 
 	if (vkBindBufferMemory(gLogicalDevice, m_stagingBuffer, m_stagingMemory, 0) != VkResult::VK_SUCCESS)
 	{
-		//스테이징 버퍼 바인드 실패로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Buffer bind failed.");
 		return false;
 	}
 
 	if (vkBindBufferMemory(gLogicalDevice, StructuredBufferData<ResourceType>::GetBuffer(), StructuredBufferData<ResourceType>::GetMemory(), 0) != VkResult::VK_SUCCESS)
 	{
-		//버퍼 바인드 실패로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Buffer bind failed.");
 		return false;
 	}
 
@@ -448,7 +447,7 @@ void RtBufferData<ResourceType>::UpdateResource(ResourceType* srcData, uint32_t 
 		}
 		else
 		{
-			//메모리 맵 실패 로그
+			REPORT(EReportType::REPORT_TYPE_WARN, "Buffer memory map failed");
 		}
 
 		SingleTimeCommandBuffer singleTimeCmdBuf;
@@ -460,16 +459,16 @@ void RtBufferData<ResourceType>::UpdateResource(ResourceType* srcData, uint32_t 
 	}
 	else
 	{
-		//데이터가 사이즈가 맞지 않음을 로깅
+		REPORT(EReportType::REPORT_TYPE_WARN, "Src buffer and dst buffer are have different size");
 	}
 }
 
 template <typename ResourceType>
 void RtBufferData<ResourceType>::UpdateResource(ResourceType& srcData, uint32_t index)
 {
-	if (index >= StructuredBufferData<ResourceType>::GetNumDatas() || index < 0)
+	if (index >= StructuredBufferData<ResourceType>::GetNumDatas())
 	{
-		//데이터 업데이트 실패 로깅
+		REPORT(EReportType::REPORT_TYPE_WARN, "An invalid index was requested.");
 		return;
 	}
 
@@ -484,7 +483,7 @@ void RtBufferData<ResourceType>::UpdateResource(ResourceType& srcData, uint32_t 
 	}
 	else
 	{
-		//메모리 맵 실패 로그
+		REPORT(EReportType::REPORT_TYPE_WARN, "Buffer memory map failed");
 	}
 
 	SingleTimeCommandBuffer singleTimeCmdBuf;

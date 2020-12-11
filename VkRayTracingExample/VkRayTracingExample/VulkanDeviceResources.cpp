@@ -14,7 +14,6 @@ bool VulkanDeviceResources::Initialize(HINSTANCE hAppInstance, HWND hMainWnd, ui
 	m_height		= height;
 	m_useRayTracing = useRayTracing;
 	
-	//개별 destroy??
 	if (!InitDevice())
 	{
 		return false;
@@ -111,7 +110,7 @@ bool VulkanDeviceResources::InitDevice()
 	vkEnumerateInstanceLayerProperties(&numInstanceLayerProperties, nullptr);
 	if (numInstanceLayerProperties < 1)
 	{
-		//debug layer 활성화 실패 로깅
+		REPORT(EReportType::REPORT_TYPE_WARN, "Debug layer activation failed.");
 	}
 	else
 	{
@@ -158,7 +157,7 @@ bool VulkanDeviceResources::InitDevice()
 	}
 	else
 	{
-		//extension을 찾지 못했다는 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "No extension found.");
 		return false;
 	}
 
@@ -190,7 +189,7 @@ bool VulkanDeviceResources::InitDevice()
 	VkResult res = vkCreateInstance(&instanceCretateInfo, nullptr, &m_vkInstance);
 	if (res != VkResult::VK_SUCCESS)
 	{
-		//인스턴스 생성실패 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Vulkan instance create failed.");
 		return false;
 	}
 
@@ -201,14 +200,14 @@ bool VulkanDeviceResources::InitDevice()
 	vkEnumeratePhysicalDevices(m_vkInstance, &numPhysicalDevices, nullptr);
 	if (res != VkResult::VK_SUCCESS)
 	{
-		//디바이스 하나도 검출 안됨 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "There are no physical devices.");
 		return false;
 	}
 	m_physicalDevices.resize(numPhysicalDevices); 
 	res = vkEnumeratePhysicalDevices(m_vkInstance, &numPhysicalDevices, m_physicalDevices.data());
 	if (res != VkResult::VK_SUCCESS)
 	{
-		//디바이스 데이터 취득 실패 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Failed to acquire physical device.");
 		return false;
 	}
 
@@ -256,7 +255,7 @@ bool VulkanDeviceResources::InitDevice()
 	vkGetPhysicalDeviceQueueFamilyProperties(m_physicalDevices[0], &numQueueFamilys, nullptr);
 	if (numQueueFamilys < 1)
 	{
-		//queue family가 0이라는 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "The number of queue families is zero.");
 		return false;
 	}
 
@@ -273,7 +272,7 @@ bool VulkanDeviceResources::InitDevice()
 	res = vkCreateWin32SurfaceKHR(m_vkInstance, &win32SurfaceCreateInfo, nullptr, &m_surface);
 	if (res != VkResult::VK_SUCCESS)
 	{
-		//win 32 surface 생성실패 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Win32 surface create failed.");
 		return false;
 	}
 
@@ -305,7 +304,7 @@ bool VulkanDeviceResources::InitDevice()
 
 	if (!queueFinded)
 	{
-		//그래픽스 큐 패밀리 인덱스 검색실패
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Queue family index search failed.");
 		return false;
 	}
 
@@ -396,7 +395,7 @@ bool VulkanDeviceResources::InitDevice()
 	res = vkCreateDevice(m_physicalDevices[0], &logicalDeviceCreateInfo, nullptr, &m_logicalDevice);
 	if (res != VkResult::VK_SUCCESS)
 	{
-		//디바이스 생성실패 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Logical deive create failed.");
 		return false;
 	}
 
@@ -416,7 +415,7 @@ bool VulkanDeviceResources::InitCommandResources()
 	VkResult res = vkCreateCommandPool(m_logicalDevice, &commandPoolCreateInfo, nullptr, &m_defaultCommandPool);
 	if (res != VkResult::VK_SUCCESS)
 	{
-		//기본 커맨드 풀이 생성되지 않았음을 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Command pool create failed.");
 		return false;
 	}
 
@@ -441,12 +440,11 @@ bool VulkanDeviceResources::InitDeviceQueue()
 
 bool VulkanDeviceResources::InitSwapChain()
 {
-	/*백버퍼 포멧확인*/
 	uint32_t formatCount = 0;
 	VkResult res = vkGetPhysicalDeviceSurfaceFormatsKHR(m_physicalDevices[0], m_surface, &formatCount, nullptr);
 	if (res != VkResult::VK_SUCCESS)
 	{
-		//포멧 카운트 취득 함수 실패 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "There is no surface format.");
 		return false;
 	}
 	std::vector<VkSurfaceFormatKHR> surfaceFormat;
@@ -454,7 +452,7 @@ bool VulkanDeviceResources::InitSwapChain()
 	res = vkGetPhysicalDeviceSurfaceFormatsKHR(m_physicalDevices[0], m_surface, &formatCount, surfaceFormat.data());
 	if (res != VkResult::VK_SUCCESS)
 	{
-		//포멧 취득 함수 실패 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Can't get surface format.");
 		return false;
 	}
 
@@ -471,7 +469,7 @@ bool VulkanDeviceResources::InitSwapChain()
 	}
 	else
 	{
-		//포멧 못찾음 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "The surface type could not be found.");
 		return false;
 	}
 
@@ -479,7 +477,7 @@ bool VulkanDeviceResources::InitSwapChain()
 	res = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_physicalDevices[0], m_surface, &surfaceCapabilities);
 	if (res != VkResult::VK_SUCCESS)
 	{
-		//capabilities 취득 실패로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Can't get VkSurfaceCapabilitiesKHR.");
 		return false;
 	}
 
@@ -487,7 +485,7 @@ bool VulkanDeviceResources::InitSwapChain()
 	res = vkGetPhysicalDeviceSurfacePresentModesKHR(m_physicalDevices[0], m_surface, &presentModeCount, nullptr);
 	if (res != VkResult::VK_SUCCESS)
 	{
-		//present mode count 취득 실패로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "There is no present mode.");
 		return false;
 	}
 	std::vector<VkPresentModeKHR> presentModes;
@@ -495,7 +493,7 @@ bool VulkanDeviceResources::InitSwapChain()
 	res = vkGetPhysicalDeviceSurfacePresentModesKHR(m_physicalDevices[0], m_surface, &presentModeCount, presentModes.data());
 	if (res != VkResult::VK_SUCCESS)
 	{
-		//present mode 취득 실패로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Can't get present mode");
 		return false;
 	}
 
@@ -582,7 +580,7 @@ bool VulkanDeviceResources::InitSwapChain()
 	res = vkCreateSwapchainKHR(m_logicalDevice, &swapchainCreateInfo, nullptr, &m_swapchain);
 	if (res != VkResult::VK_SUCCESS)
 	{
-		//스왑체인 생성실패로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Swap chain create failed.");
 		return false;
 	}
 
@@ -594,7 +592,7 @@ bool VulkanDeviceResources::InitSwapChainResources()
 	VkResult res = vkGetSwapchainImagesKHR(m_logicalDevice, m_swapchain, &m_swapchainBufferCount, nullptr);
 	if (res != VkResult::VK_SUCCESS)
 	{
-		//스왑체인 버퍼 카운트 취득실패 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "The number of swap chains is zero.");
 		return false;
 	}
 	std::vector<VkImage> swapchainImages;
@@ -682,7 +680,7 @@ bool VulkanDeviceResources::InitSwapChainResources()
 	}
 	else
 	{
-		//깊이 버퍼 포멧 지원 안함 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Depth stencil format is not supported.");
 		return false;
 	}
 
@@ -729,7 +727,7 @@ bool VulkanDeviceResources::InitSwapChainResources()
 	res = vkCreateImage(m_logicalDevice, &imageCreateInfo, nullptr, &m_depthBuffer.m_image);
 	if (res != VkResult::VK_SUCCESS)
 	{
-		//깊이 버퍼 이미지 생성실패 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Depth stencil image create failed.");
 		return false;
 	}
 
@@ -741,20 +739,20 @@ bool VulkanDeviceResources::InitSwapChainResources()
 		res = vkAllocateMemory(m_logicalDevice, &memAllocInfo, nullptr, &m_depthBuffer.m_deviceMemory);
 		if (res != VkResult::VK_SUCCESS)
 		{
-			//깊이버퍼 메모리 할당 로깅
+			REPORT(EReportType::REPORT_TYPE_ERROR, "Depth stencil memory create failed.");
 			return false;
 		}
 		res = vkBindImageMemory(m_logicalDevice, m_depthBuffer.m_image, m_depthBuffer.m_deviceMemory, 0);
 		if (res != VkResult::VK_SUCCESS)
 		{
-			//깊이버퍼 이미지 메모리에 바인드 실패 로깅
+			REPORT(EReportType::REPORT_TYPE_ERROR, "Depth stencil image bind failed.");
 			return false;
 		}
 		imageViewCreateInfo.image = m_depthBuffer.m_image;
 		res = vkCreateImageView(m_logicalDevice, &imageViewCreateInfo, nullptr, &m_depthBuffer.m_imageView);
 		if (res != VkResult::VK_SUCCESS)
 		{
-			//깊이버퍼 이미지 뷰 생성 실패로깅
+			REPORT(EReportType::REPORT_TYPE_ERROR, "Depth stencil image view create failed.");
 			return false;
 		}
 	}

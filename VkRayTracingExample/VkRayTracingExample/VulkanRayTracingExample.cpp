@@ -10,7 +10,6 @@
 bool VulkanRayTracingExample::Initialize()
 {
 	gFbxGeomLoader.Initialize();
-
 	m_camera.Initialize
 	(
 		static_cast<float>(GetWidth()),
@@ -49,17 +48,16 @@ bool VulkanRayTracingExample::Initialize()
 		semaphoreCrateInfo.pNext = nullptr;
 		semaphoreCrateInfo.flags = 0;
 
-		VkResult res = vkCreateSemaphore(gLogicalDevice, &semaphoreCrateInfo, nullptr, &m_imageAcquiredSemaphore[i]);
-		if (res != VkResult::VK_SUCCESS)
+		bool res = vkCreateSemaphore(gLogicalDevice, &semaphoreCrateInfo, nullptr, &m_imageAcquiredSemaphore[i]) == VkResult::VK_SUCCESS;
+		if (!res)
 		{
-			//이미지 취득 세마포어 생성 실패
+			REPORT(EReportType::REPORT_TYPE_ERROR, "Semaphore create failed");
 			return false;
 		}
-
-		res = vkCreateSemaphore(gLogicalDevice, &semaphoreCrateInfo, nullptr, &m_renderCompleteSemaphore[i]);
-		if (res != VkResult::VK_SUCCESS)
+		res = vkCreateSemaphore(gLogicalDevice, &semaphoreCrateInfo, nullptr, &m_renderCompleteSemaphore[i]) == VkResult::VK_SUCCESS;
+		if (!res)
 		{
-			//이미지 취득 세마포어 생성 실패
+			REPORT(EReportType::REPORT_TYPE_ERROR, "Semaphore create failed");
 			return false;
 		}
 
@@ -102,19 +100,23 @@ bool VulkanRayTracingExample::Initialize()
 	m_rayTracer.LoadRayGenShader(raygenShaderFilePath);
 	m_rayTracer.LoadMissShader(defaultMissShaderFilePath);
 	m_rayTracer.LoadMissShader(shadowMissShaderFilePath);
-	m_rayTracer.Build();
+	if (!m_rayTracer.Build())
+	{
+		return false;
+	}
 
 	return true;
 }
 
 void VulkanRayTracingExample::Update(float timeDelta)
 {
-	UpdateTransformAnimation();
-
 	m_globalConstants.LightDir = glm::vec3(0.0f, 1.0f, -1.0f);
 	m_globalConstants.MatViewInv = glm::inverse(m_camera.GetViewMatrix());
 	m_globalConstants.MatProjInv = glm::inverse(m_camera.GetProjectionMatrix());
-	
+}
+
+void VulkanRayTracingExample::PreRender()
+{
 	m_rayTracer.Update(m_globalConstants, m_currentFrame);
 }
 
@@ -231,32 +233,6 @@ void VulkanRayTracingExample::Destroy()
 	gShaderContainer.Clear();
 	gGeomContainer.Clear();
 	gTexContainer.Clear();
-}
-
-void VulkanRayTracingExample::UpdateTransformAnimation()
-{
-	glm::mat4 modelRotMat = glm::rotate(glm::mat4(1.0f), PI, glm::vec3(1.0f, 0.0f, 0.0f));
-	glm::mat4 modelScaleMat = glm::scale(glm::mat4(1.0f), glm::vec3(0.5f, 0.5f, 0.5f));
-
-	glm::vec3 pos1(0.0f, 0.0f, 15.0f);
-	glm::vec3 pos2(0.0f, 0.0f, -15.0f);
-	glm::vec3 pos3(15.0f, 0.0f, 0.0f);
-	glm::vec3 pos4(-15.0f, 0.0f, 0.0f);
-
-	glm::vec3 rotatedPos1 = glm::rotateY(pos1, GlobalTimer::Instance().GetTime() * 0.3f);
-	glm::vec3 rotatedPos2 = glm::rotateY(pos2, GlobalTimer::Instance().GetTime() * 0.3f);
-	glm::vec3 rotatedPos3 = glm::rotateY(pos3, GlobalTimer::Instance().GetTime() * 0.3f);
-	glm::vec3 rotatedPos4 = glm::rotateY(pos4, GlobalTimer::Instance().GetTime() * 0.3f);
-
-	glm::mat4 rotatedMat1 = glm::translate(glm::mat4(1.0f), rotatedPos1) * modelRotMat * modelScaleMat;
-	glm::mat4 rotatedMat2 = glm::translate(glm::mat4(1.0f), rotatedPos2) * modelRotMat * modelScaleMat;
-	glm::mat4 rotatedMat3 = glm::translate(glm::mat4(1.0f), rotatedPos3) * modelRotMat * modelScaleMat;
-	glm::mat4 rotatedMat4 = glm::translate(glm::mat4(1.0f), rotatedPos4) * modelRotMat * modelScaleMat;
-
-	m_roteteInstances[0]->SetWorldMatrix(rotatedMat1, true);
-	m_roteteInstances[1]->SetWorldMatrix(rotatedMat2, true);
-	m_roteteInstances[2]->SetWorldMatrix(rotatedMat3, true);
-	m_roteteInstances[3]->SetWorldMatrix(rotatedMat4, true);
 }
 
 void VulkanRayTracingExample::OnScreenSizeChanged()

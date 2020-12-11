@@ -4,7 +4,6 @@ SimpleTexture2D* TextureContainer::CreateTexture(const char* filePath)
 {
 	SimpleTexture2D* texture = nullptr;
 
-	//로드 되어있는지 검색
 	auto iterKeyFinded = m_keyTable.find(filePath);
 	if (iterKeyFinded != m_keyTable.end())
 	{
@@ -15,14 +14,9 @@ SimpleTexture2D* TextureContainer::CreateTexture(const char* filePath)
 		}
 	}
 
-	//로드 되어있지 않다면 로드한다
 	if (texture == nullptr)
 	{
 		texture = LoadTexture(filePath);
-		if (texture == nullptr)
-		{
-			//로딩 실패 로깅....
-		}
 	}
 
 	if (texture != nullptr)
@@ -67,7 +61,6 @@ SimpleTexture2D* TextureContainer::LoadTexture(const char* filePath)
 
 	if (!texture->Load(filePath))
 	{
-		//텍스쳐 로딩실패 로깅
 		return nullptr;
 	}
 

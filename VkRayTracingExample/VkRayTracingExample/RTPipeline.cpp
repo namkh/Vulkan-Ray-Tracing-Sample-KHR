@@ -101,7 +101,7 @@ bool RTPipeline::Build(VkPipelineLayout pipelineLayout)
 
 	if (vkCreateRayTracingPipelinesKHR(gLogicalDevice, VK_NULL_HANDLE, 1, &rayTracingPipeLineCreateInfo, nullptr, &m_pipeline) != VkResult::VK_SUCCESS)
 	{
-		//ray tracing pipe line 생성실패를 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Pipeline create failed.");
 		return false;
 	}
 	return true;

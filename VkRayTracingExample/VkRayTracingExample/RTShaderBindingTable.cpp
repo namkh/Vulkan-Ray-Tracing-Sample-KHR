@@ -4,7 +4,7 @@ bool RTShaderBindingTable::Build(RTPipeline* pipeline)
 {
 	if (pipeline == nullptr)
 	{
-		//파이프라인이 아직 생성되지 않았음을 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "The pipeline was not created.");
 		return false;
 	}
 

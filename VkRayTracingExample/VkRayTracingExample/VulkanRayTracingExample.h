@@ -19,11 +19,9 @@ public:
 public:
 	virtual bool Initialize() override;
 	virtual void Update(float timeDelta) override;
+	virtual void PreRender() override;
 	virtual void Render() override;
 	virtual void Destroy() override;
-
-public:
-	void UpdateTransformAnimation();
 
 public:
 	void OnScreenSizeChanged();

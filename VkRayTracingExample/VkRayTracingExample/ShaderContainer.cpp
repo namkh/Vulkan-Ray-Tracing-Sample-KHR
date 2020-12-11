@@ -124,7 +124,10 @@ void ShaderContainer::Clear()
 		{
 			if (curShader->GetRefCount() == 0)
 			{
-				UnloadShader(curShader);
+				m_keyTable.erase(curShader->GetSrcFilePath());
+				m_indexTable.erase(curShader->GetUID());
+				curShader->Unload();
+				delete curShader;
 			}
 		}
 	}

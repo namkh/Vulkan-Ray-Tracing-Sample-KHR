@@ -62,19 +62,17 @@ bool BottomLevelAS::Build(VkCommandBuffer commandBuffer, bool update)
 
 		if (vkCreateAccelerationStructureKHR(gLogicalDevice, &asCreateInfo, nullptr, &m_accelerationStructure) != VkResult::VK_SUCCESS)
 		{
-			//bottom levle as 생성 실패로깅...
+			REPORT(EReportType::REPORT_TYPE_ERROR, "Blas create failed.");
 			return false;
 		}
 
 		if (!m_asMemory.Initialize(m_accelerationStructure))
 		{
-			//bottom levle as 메모리 할당 실패로깅
 			return false;
 		}
 
 		if (!m_scratchBuffer.Initialize(m_accelerationStructure))
 		{
-			//bottom level as 스크래치 버퍼 생성실패 로깅
 			return false;
 		}
 
@@ -121,7 +119,7 @@ bool BottomLevelAS::Build(VkCommandBuffer commandBuffer, bool update)
 	{
 		if (vkBuildAccelerationStructureKHR(gLogicalDevice, 1, &asBuildGeomInfo, asBuildOffsetInfos.data()) != VkResult::VK_SUCCESS)
 		{
-			//bottom levle as 빌드 실패 로깅
+			REPORT(EReportType::REPORT_TYPE_ERROR, "Blas build failed.");
 			return false;
 		}
 	}
@@ -400,8 +398,6 @@ void BottomLevelAsGroup::Destroy()
 	Clear();
 }
 
-//blas 목록이 갱신되었다면 전체 재빌드
-//인스턴스 또는 데이터만 바뀌었다면 업데이트빌드
 bool TopLevelAS::Build(VkCommandBuffer commandBuffer, std::vector<BottomLevelAsGroup*>& bottomLevelAsGroupList, bool updateBuild)
 {
 	std::vector<VkAccelerationStructureCreateGeometryTypeInfoKHR> allTopLevelAsCreateGeomTypeInfos;
@@ -428,7 +424,7 @@ bool TopLevelAS::Build(VkCommandBuffer commandBuffer, std::vector<BottomLevelAsG
 
 		if (vkCreateAccelerationStructureKHR(gLogicalDevice, &asCreateInfo, nullptr, &m_accelerationStructure) != VkResult::VK_SUCCESS)
 		{
-			//top level as 생성실패 로깅
+			REPORT(EReportType::REPORT_TYPE_ERROR, "tlas create failed.");
 			return false;
 		}
 
@@ -438,7 +434,6 @@ bool TopLevelAS::Build(VkCommandBuffer commandBuffer, std::vector<BottomLevelAsG
 		}
 		if (!m_asMemory.Initialize(m_accelerationStructure))
 		{
-			//top level as 메모리 할당 실패로깅
 			return false;
 		}
 
@@ -448,7 +443,6 @@ bool TopLevelAS::Build(VkCommandBuffer commandBuffer, std::vector<BottomLevelAsG
 		}
 		if (!m_scratchBuffer.Initialize(m_accelerationStructure))
 		{
-			//top level as 스크래치 버퍼 생성실패 로깅
 			return false;
 		}
 	}
@@ -490,7 +484,7 @@ bool TopLevelAS::Build(VkCommandBuffer commandBuffer, std::vector<BottomLevelAsG
 	{
 		if (vkBuildAccelerationStructureKHR(gLogicalDevice, 1, &asBuildGeomInfo, offsets.data()) != VkResult::VK_SUCCESS)
 		{
-			//top level as 빌드실패 로깅
+			REPORT(EReportType::REPORT_TYPE_ERROR, "Tlas build failed.");
 			return false;
 		}
 	}

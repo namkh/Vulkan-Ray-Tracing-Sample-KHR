@@ -10,6 +10,7 @@ bool Fence::Initialize()
 	fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 	if (vkCreateFence(gLogicalDevice, &fenceCreateInfo, nullptr, &m_fence) != VkResult::VK_SUCCESS)
 	{
+		REPORT(EReportType::REPORT_TYPE_ERROR, "fence create failed.");
 		return false;
 	}
 	return true;
@@ -25,7 +26,10 @@ bool Fence::WaitForFence()
 
 	if (res != VkResult::VK_SUCCESS)
 	{
-		//체크포인트 매니저 어떻게 심을까??
+		if (res == VkResult::VK_ERROR_DEVICE_LOST)
+		{
+			REPORT_WITH_SHUTDOWN(EReportType::REPORT_TYPE_ERROR, "Device Lost.");
+		}
 		return false;
 	}
 	else

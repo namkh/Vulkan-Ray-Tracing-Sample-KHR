@@ -6,7 +6,7 @@ bool BufferData::Initialzie(uint32_t size, VkBufferUsageFlags bufferUsage, VkFla
 {
 	if (m_isAllocated)
 	{
-		//자원이 이미 할당 되어있음을 로깅
+		REPORT(EReportType::REPORT_TYPE_WARN, "BufferData is already allocated.");
 		return false;
 	}
 
@@ -25,7 +25,7 @@ bool BufferData::Initialzie(uint32_t size, VkBufferUsageFlags bufferUsage, VkFla
 		0);
 	if (res != VkResult::VK_SUCCESS)
 	{
-		//버퍼 바인드 실패로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "BufferData memory bind failed");
 		return false;
 	}
 
@@ -43,7 +43,6 @@ bool BufferData::Reset(uint32_t size, VkBufferUsageFlags bufferUsage, VkFlags me
 	Destroy();
 	if (!Initialzie(m_size, bufferUsage, memRequirementsMask))
 	{
-		//버퍼 할당 실패를 로깅
 		return false;
 	}
 	return true;
@@ -58,8 +57,7 @@ bool BufferData::UpdateResource(uint8_t* srcData, uint32_t offset, uint32_t size
 {
 	if (offset + size > m_size)
 	{
-		//버퍼를 넘는 자원복사 요청
-		//데이터 업데이트 실패 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "The requested size is larger than the buffer size.");
 		return false;
 	}
 
@@ -74,7 +72,7 @@ bool BufferData::UpdateResource(uint8_t* srcData, uint32_t offset, uint32_t size
 	}
 	else
 	{
-		//메모리 맵 실패 로그
+		REPORT(EReportType::REPORT_TYPE_WARN, "Memory map failed.");
 		return false;
 	}
 	return true;
@@ -108,7 +106,7 @@ bool BufferData::CreateBuffer()
 	VkResult res = vkCreateBuffer(gLogicalDevice, &bufferCreateInfo, nullptr, &m_buffer);
 	if (res != VkResult::VK_SUCCESS)
 	{
-		//버퍼 생성 실패에 대한 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "VkBuffer create failed.");
 		return false;
 	}
 	return true;
@@ -124,19 +122,18 @@ bool BufferData::AllocateMemory()
 	allocInfo.allocationSize = memReqs.size;
 	allocInfo.memoryTypeIndex = 0;
 
-	//메모리 프로퍼티에서 할당 메모리 타입을 찾는다
 	if (!VulkanDeviceResources::Instance().MemoryTypeFromProperties(memReqs.memoryTypeBits,
 																	m_memRequirementsMask,
 																	&allocInfo.memoryTypeIndex))
 	{
-		//메모리 타입 없음을 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Not found device meory type.");
 		return false;
 	}
 
 	VkResult res = vkAllocateMemory(gLogicalDevice, &allocInfo, nullptr, &m_memory);
 	if (res != VkResult::VK_SUCCESS)
 	{
-		//디바이스 메모리 할당실패를 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Device memory allocation failed");
 		return false;
 	}
 
@@ -213,7 +210,7 @@ bool VertexBuffer::CreateBuffer()
 	VkResult res = vkCreateBuffer(gLogicalDevice, &bufferCreateInfo, nullptr, &m_buffer);
 	if (res != VkResult::VK_SUCCESS)
 	{
-		//버퍼 생성 실패에 대한 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "VkBuffer create failed.(vkCreateBuffer)");
 		return false;
 	}
 	return true;
@@ -230,24 +227,23 @@ bool VertexBuffer::AllocateMemory()
 	allocInfo.allocationSize = memReqs.size;
 	allocInfo.memoryTypeIndex = 0;
 
-	//메모리 프로퍼티에서 할당 메모리 타입을 찾는다
 	if (!VulkanDeviceResources::Instance().MemoryTypeFromProperties(memReqs.memoryTypeBits,
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 		&allocInfo.memoryTypeIndex))
 	{
-		//메모리 타입 없음을 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Not found device meory type.");
 		return false;
 	}
 	
 	if (vkAllocateMemory(gLogicalDevice, &allocInfo, nullptr, &m_memory) != VkResult::VK_SUCCESS)
 	{
-		//디바이스 메모리 할당실패를 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Device memory allocation failed.");
 		return false;
 	}
 
 	if (vkBindBufferMemory(gLogicalDevice, m_buffer, m_memory, 0) != VkResult::VK_SUCCESS)
 	{
-		//버퍼 바인드 실패로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Buffer memory bind failed.");
 		return false;
 	}
 
@@ -258,6 +254,7 @@ bool VertexBuffer::UploadData(std::vector<DefaultVertex>& verts)
 {
 	if (m_buffer == VK_NULL_HANDLE && m_memory == VK_NULL_HANDLE)
 	{
+		REPORT(EReportType::REPORT_TYPE_WARN, "Buffer is not ready.");
 		return false;
 	}
 	uint8_t* data = nullptr;
@@ -269,7 +266,7 @@ bool VertexBuffer::UploadData(std::vector<DefaultVertex>& verts)
 	}
 	else
 	{
-		//메모리 맵 실패 로그
+		REPORT(EReportType::REPORT_TYPE_WARN, "Buffer memory map failed.");
 		return false;
 	}
 	return true;
@@ -328,13 +325,13 @@ bool AsVertexBuffer::CreateBuffer()
 	
 	if (vkCreateBuffer(gLogicalDevice, &stagingBuifferCreateInfo, nullptr, &m_stagingBuffer) != VkResult::VK_SUCCESS)
 	{
-		//버퍼 생성 실패에 대한 로깅
+		REPORT(EReportType::REPORT_TYPE_WARN, "Staging buffer create failed.");
 		return false;
 	}
 
 	if (vkCreateBuffer(gLogicalDevice, &bufferCreateInfo, nullptr, &m_buffer) != VkResult::VK_SUCCESS)
 	{
-		//버퍼 생성 실패에 대한 로깅
+		REPORT(EReportType::REPORT_TYPE_WARN, "Buffer create failed.");
 		return false;
 	}
 	return true;
@@ -361,13 +358,12 @@ bool AsVertexBuffer::AllocateMemory()
 	VkMemoryAllocateInfo deviceMemAllocInfo = stagingMemAllocInfo;
 	deviceMemAllocInfo.allocationSize = deviceMemReqs.size;
 
-	//메모리 프로퍼티에서 할당 메모리 타입을 찾는다
 	if (!VulkanDeviceResources::Instance().MemoryTypeFromProperties(stagingMemReqs.memoryTypeBits,
 																	VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
 																	VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 																	&stagingMemAllocInfo.memoryTypeIndex))
 	{
-		//메모리 타입 없음을 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Not found device meory type.");
 		return false;
 	}
 
@@ -376,31 +372,31 @@ bool AsVertexBuffer::AllocateMemory()
 																	VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 																	&deviceMemAllocInfo.memoryTypeIndex))
 	{
-		//메모리 타입 없음을 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Not found device meory type.");
 		return false;
 	}
 
 	if (vkAllocateMemory(gLogicalDevice, &stagingMemAllocInfo, nullptr, &m_stagingMemory) != VkResult::VK_SUCCESS)
 	{
-		//디바이스 메모리 할당실패를 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Device memory allocation failed.");
 		return false;
 	}
 
 	if (vkAllocateMemory(gLogicalDevice, &deviceMemAllocInfo, nullptr, &m_memory) != VkResult::VK_SUCCESS)
 	{
-		//디바이스 메모리 할당실패를 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Device memory allocation failed.");
 		return false;
 	}
 
 	if (vkBindBufferMemory(gLogicalDevice, m_stagingBuffer, m_stagingMemory, 0) != VkResult::VK_SUCCESS)
 	{
-		//버퍼 바인드 실패로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Buffer bind failed.");
 		return false;
 	}
 
 	if (vkBindBufferMemory(gLogicalDevice, m_buffer, m_memory, 0) != VkResult::VK_SUCCESS)
 	{
-		//버퍼 바인드 실패로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Buffer bind failed.");
 		return false;
 	}
 
@@ -411,6 +407,7 @@ bool AsVertexBuffer::UploadData(std::vector<DefaultVertex>& verts)
 {
 	if (m_buffer == VK_NULL_HANDLE || m_memory == VK_NULL_HANDLE || m_stagingBuffer == VK_NULL_HANDLE || m_stagingMemory == VK_NULL_HANDLE)
 	{
+		REPORT(EReportType::REPORT_TYPE_WARN, "Buffer is not ready.");
 		return false;
 	}
 	uint8_t* data = nullptr;
@@ -422,7 +419,7 @@ bool AsVertexBuffer::UploadData(std::vector<DefaultVertex>& verts)
 	}
 	else
 	{
-		//메모리 맵 실패 로그
+		REPORT(EReportType::REPORT_TYPE_WARN, "Buffer memory map failed");
 		return false;
 	}
 
@@ -473,7 +470,7 @@ bool IndexBuffer::CreateBuffer()
 	VkResult res = vkCreateBuffer(gLogicalDevice, &bufferCreateInfo, nullptr, &m_buffer);
 	if (res != VkResult::VK_SUCCESS)
 	{
-		//버퍼 생성 실패에 대한 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Buffer create failed");
 		return false;
 	}
 	return true;
@@ -490,26 +487,25 @@ bool IndexBuffer::AllocateMemory()
 	allocInfo.allocationSize = memReqs.size;
 	allocInfo.memoryTypeIndex = 0;
 
-	//메모리 프로퍼티에서 할당 메모리 타입을 찾는다
 	if (!VulkanDeviceResources::Instance().MemoryTypeFromProperties(memReqs.memoryTypeBits,
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 		&allocInfo.memoryTypeIndex))
 	{
-		//메모리 타입 없음을 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Not found device meory type.");
 		return false;
 	}
 
 	VkResult res = vkAllocateMemory(gLogicalDevice, &allocInfo, nullptr, &m_memory);
 	if (res != VkResult::VK_SUCCESS)
 	{
-		//디바이스 메모리 할당실패를 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Device memory allocation failed.");
 		return false;
 	}
 
 	res = vkBindBufferMemory(gLogicalDevice, m_buffer, m_memory, 0);
 	if (res != VkResult::VK_SUCCESS)
 	{
-		//버퍼 바인드 실패로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Buffer bind failed.");
 		return false;
 	}
 
@@ -518,6 +514,11 @@ bool IndexBuffer::AllocateMemory()
 
 bool IndexBuffer::UploadData(std::vector<uint32_t>& indices)
 {
+	if (m_buffer == VK_NULL_HANDLE || m_memory == VK_NULL_HANDLE)
+	{
+		REPORT(EReportType::REPORT_TYPE_WARN, "Buffer is not ready.");
+		return false;
+	}
 	uint8_t* data = nullptr;
 	VkResult res = vkMapMemory(gLogicalDevice, m_memory, 0, m_byteSize, 0, (void**)&data);
 	if (res == VkResult::VK_SUCCESS)
@@ -528,7 +529,7 @@ bool IndexBuffer::UploadData(std::vector<uint32_t>& indices)
 	}
 	else
 	{
-		//메모리 맵 실패 로그
+		REPORT(EReportType::REPORT_TYPE_WARN, "Buffer memory map failed");
 		return false;
 	}
 	return true;
@@ -582,7 +583,7 @@ bool AsIndexBuffer::CreateBuffer()
 
 	if (vkCreateBuffer(gLogicalDevice, &stagingBufferCreateInfo, nullptr, &m_stagingBuffer) != VkResult::VK_SUCCESS)
 	{
-		//스테이징 버퍼 생성 실패에 대한 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Staging buffer create failed.");
 		return false;
 	}
 
@@ -596,7 +597,7 @@ bool AsIndexBuffer::CreateBuffer()
 
 	if (vkCreateBuffer(gLogicalDevice, &deviceBufferCreateInfo, nullptr, &m_buffer) != VkResult::VK_SUCCESS)
 	{
-		//버퍼 생성 실패에 대한 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Buffer create failed.");
 		return false;
 	}
 	return true;
@@ -627,41 +628,40 @@ bool AsIndexBuffer::AllocateMemory()
 																	VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 																	&stagingMemAllocInfo.memoryTypeIndex))
 	{
-		//메모리 타입 없음을 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Not found device meory type.");
 		return false;
 	}
 
-	//메모리 프로퍼티에서 할당 메모리 타입을 찾는다
 	if (!VulkanDeviceResources::Instance().MemoryTypeFromProperties(deviceMemReqs.memoryTypeBits,
 																	VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 																	&deviceMemAllocInfo.memoryTypeIndex))
 	{
-		//메모리 타입 없음을 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Not found device meory type.");
 		return false;
 	}
 
 	VkResult res = vkAllocateMemory(gLogicalDevice, &stagingMemAllocInfo, nullptr, &m_stagingMemory);
 	if (res != VkResult::VK_SUCCESS)
 	{
-		//디바이스 메모리 할당실패를 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Device memory allocation failed.");
 		return false;
 	}
 
 	if (vkAllocateMemory(gLogicalDevice, &deviceMemAllocInfo, nullptr, &m_memory) != VkResult::VK_SUCCESS)
 	{
-		//디바이스 메모리 할당실패를 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Device memory allocation failed.");
 		return false;
 	}
 
 	if (vkBindBufferMemory(gLogicalDevice, m_stagingBuffer, m_stagingMemory, 0) != VkResult::VK_SUCCESS)
 	{
-		//버퍼 바인드 실패로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Buffer bind failed.");
 		return false;
 	}
 
 	if (vkBindBufferMemory(gLogicalDevice, m_buffer, m_memory, 0) != VkResult::VK_SUCCESS)
 	{
-		//버퍼 바인드 실패로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Buffer bind failed.");
 		return false;
 	}
 
@@ -670,6 +670,11 @@ bool AsIndexBuffer::AllocateMemory()
 
 bool AsIndexBuffer::UploadData(std::vector<uint32_t>& indices)
 {
+	if (m_buffer == VK_NULL_HANDLE || m_stagingBuffer == VK_NULL_HANDLE || m_memory == VK_NULL_HANDLE || m_stagingMemory == VK_NULL_HANDLE)
+	{
+		REPORT(EReportType::REPORT_TYPE_WARN, "Buffer is not ready.");
+		return false;
+	}
 	uint8_t* data = nullptr;
 	VkResult res = vkMapMemory(gLogicalDevice, m_stagingMemory, 0, m_byteSize, 0, (void**)&data);
 	if (res == VkResult::VK_SUCCESS)
@@ -680,7 +685,7 @@ bool AsIndexBuffer::UploadData(std::vector<uint32_t>& indices)
 	}
 	else
 	{
-		//메모리 맵 실패 로그
+		REPORT(EReportType::REPORT_TYPE_WARN, "Buffer memory map failed");
 		return false;
 	}
 
@@ -698,7 +703,7 @@ bool RayTracingScratchBuffer::Initialize(VkAccelerationStructureKHR as)
 {
 	if (m_isAllocated)
 	{
-		//버퍼가 이미 할당되어있음을 로깅
+		REPORT(EReportType::REPORT_TYPE_WARN, "BufferData is already allocated.");
 		return false;
 	}
 
@@ -719,7 +724,7 @@ bool RayTracingScratchBuffer::Initialize(VkAccelerationStructureKHR as)
 	bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	if (vkCreateBuffer(gLogicalDevice, &bufferCreateInfo, nullptr, &m_buffer) != VkResult::VK_SUCCESS)
 	{
-		//스크래치 버퍼 생성실패 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Buffer create failed.");
 		return false;
 	}
 
@@ -741,12 +746,12 @@ bool RayTracingScratchBuffer::Initialize(VkAccelerationStructureKHR as)
 
 		if (vkAllocateMemory(gLogicalDevice, &memAllocInfo, nullptr, &m_memory) != VkResult::VK_SUCCESS)
 		{
-			//스크래치 버퍼 장치 메모리 할당실패 로깅
+			REPORT(EReportType::REPORT_TYPE_ERROR, "Device memory allocation failed.");
 			return false;
 		}
 		if (vkBindBufferMemory(gLogicalDevice, m_buffer, m_memory, 0) != VkResult::VK_SUCCESS)
 		{
-			//스크래치 버퍼 메모리 바인드 실패로깅
+			REPORT(EReportType::REPORT_TYPE_ERROR, "Buffer bind failed.");
 			return false;
 		}
 
@@ -754,7 +759,7 @@ bool RayTracingScratchBuffer::Initialize(VkAccelerationStructureKHR as)
 	}
 	else
 	{
-		//메모리 타입 검색 실패를 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Not found device meory type.");
 		return false;
 	}
 
@@ -782,7 +787,7 @@ bool RayTracingAccelerationStructureMemory::Initialize(VkAccelerationStructureKH
 {
 	if (m_isAllocated)
 	{
-		//이미 자원이 할당 되있음을 로깅
+		REPORT(EReportType::REPORT_TYPE_WARN, "BufferData is already allocated.");
 		return false;
 	}
 	VkMemoryRequirements2 memReq2 = {};
@@ -804,13 +809,13 @@ bool RayTracingAccelerationStructureMemory::Initialize(VkAccelerationStructureKH
 		memAllocInfo.memoryTypeIndex = memTypeIndex;
 		if (vkAllocateMemory(gLogicalDevice, &memAllocInfo, nullptr, &m_memory) != VkResult::VK_SUCCESS)
 		{
-			//as 메모리 할당 실패를 로깅
+			REPORT(EReportType::REPORT_TYPE_ERROR, "Device memory allocation failed.");
 			return false;
 		}
 	}
 	else
 	{
-		//as 메모리 타입을 찾지 못함을 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Not found device meory type.");
 		return false;
 	}
 
@@ -822,8 +827,8 @@ bool RayTracingAccelerationStructureMemory::Initialize(VkAccelerationStructureKH
 	
 	if (vkBindAccelerationStructureMemoryKHR(gLogicalDevice, 1, &asMemBindInfo) != VkResult::VK_SUCCESS)
 	{
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Buffer bind failed.");
 		return false;
-		//as와 메모리 바인드 실패
 	}
 
 	m_isAllocated = true;

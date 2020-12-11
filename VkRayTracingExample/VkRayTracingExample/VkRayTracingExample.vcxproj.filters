@@ -93,9 +93,6 @@
     <ClCompile Include="SphericalCoordinateMovementCamera.cpp">
       <Filter>Example\Object</Filter>
     </ClCompile>
-    <ClCompile Include="Win32Application.cpp">
-      <Filter>Example\Common</Filter>
-    </ClCompile>
     <ClCompile Include="Utils.cpp">
       <Filter>Example\Utility</Filter>
     </ClCompile>
@@ -106,6 +103,9 @@
       <Filter>Example</Filter>
     </ClCompile>
     <ClCompile Include="Main.cpp">
+      <Filter>Example</Filter>
+    </ClCompile>
+    <ClCompile Include="Win32Application.cpp">
       <Filter>Example</Filter>
     </ClCompile>
   </ItemGroup>
@@ -188,9 +188,6 @@
     <ClInclude Include="ExampleAppBase.h">
       <Filter>Example\Common</Filter>
     </ClInclude>
-    <ClInclude Include="Win32Application.h">
-      <Filter>Example\Common</Filter>
-    </ClInclude>
     <ClInclude Include="Utils.h">
       <Filter>Example\Utility</Filter>
     </ClInclude>
@@ -207,6 +204,9 @@
       <Filter>Example\Utility</Filter>
     </ClInclude>
     <ClInclude Include="VulkanRayTracingExample.h">
+      <Filter>Example</Filter>
+    </ClInclude>
+    <ClInclude Include="Win32Application.h">
       <Filter>Example</Filter>
     </ClInclude>
   </ItemGroup>

@@ -9,7 +9,6 @@ bool RTPipelineResources::Build(VkAccelerationStructureKHR tlasHandle, RtTargetI
 {
 	if (!CreateBuffers())
 	{
-		//assert가 편하긴한데... message + assert or exception
 		return false;
 	}
 
@@ -84,7 +83,6 @@ bool RTPipelineResources::CreateBuffers()
 	);
 	if (!res)
 	{
-		//인스턴스 버퍼생성 실패를 로깅
 		return false;
 	}
 
@@ -97,7 +95,6 @@ bool RTPipelineResources::CreateBuffers()
 	);
 	if (!res)
 	{
-		//머트리얼 버퍼생성 실패를 로깅
 		return false;
 	}
 
@@ -108,7 +105,6 @@ bool RTPipelineResources::CreateBuffers()
 	);
 	if (!res)
 	{
-		//globalConstant 버퍼생성 실패를 로깅
 		return false;
 	}
 	return res;
@@ -135,7 +131,7 @@ bool RTPipelineResources::CreateDescriptorPool()
 	VkResult res = vkCreateDescriptorPool(gLogicalDevice, &descPoolCreateInfo, nullptr, &m_descPool);
 	if (res != VkResult::VK_SUCCESS)
 	{
-		//상수버퍼 디스크립터 풀 생성실패 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Descriptor pool create failed.");
 		return false;
 	}
 
@@ -229,7 +225,7 @@ bool RTPipelineResources::RefreshResourceBind()
 	VkResult res = vkCreateDescriptorSetLayout(gLogicalDevice, &layoutCreateInfo, nullptr, m_descLayouts.data());
 	if (res != VkResult::VK_SUCCESS)
 	{
-		//desc set 생성실패 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Descriptor set layout create failed.");
 		return false;
 	}
 
@@ -241,7 +237,7 @@ bool RTPipelineResources::RefreshResourceBind()
 	res = vkCreatePipelineLayout(gLogicalDevice, &pipelineLayoutCreateInfo, nullptr, &m_pipelineLayout);
 	if (res != VkResult::VK_SUCCESS)
 	{
-		//pipeline layout 생성 실패를 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Pipeline layout create failed.");
 		return false;
 	}
 
@@ -256,7 +252,7 @@ bool RTPipelineResources::RefreshResourceBind()
 	res = vkAllocateDescriptorSets(gLogicalDevice, descSetAllocateInfo.data(), m_descSets.data());
 	if (res != VkResult::VK_SUCCESS)
 	{
-		//디스크립터 셋 생성실패 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Descriptor sets create failed.");
 		return false;
 	}
 

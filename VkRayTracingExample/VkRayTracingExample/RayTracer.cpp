@@ -14,19 +14,18 @@ bool RayTracer::Initialize(uint32_t width, uint32_t height, VkFormat rtTargetFor
 	commandPoolCreateInfo.queueFamilyIndex = gVkDeviceRes.GetGraphicsQueueFamilyIndex();
 	if (vkCreateCommandPool(gLogicalDevice, &commandPoolCreateInfo, nullptr, &m_commandPool) != VkResult::VK_SUCCESS)
 	{
-		//커맨드 풀 생성실패 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Command pool create failed.");
 		return false;
 	}
 
 	if (!m_rtTargetImage.Initialize(m_width, m_height, rtTargetFormat))
 	{
-		//rt target 생성실패 로깅
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Ray tracing render target image create failed.");
 		return false;
 	}
 	
 	if (!m_commandBufferContainer.Initialize(m_commandPool, 2))
 	{
-		//command buffer container 생성실패
 		return false;
 	}
 	
@@ -113,13 +112,11 @@ bool RayTracer::Build()
 {
 	if (!m_accelerationStructure.Initialize(m_commandPool))
 	{
-		//as 생성실패 로깅
 		return false;
 	}
 
 	if (!m_accelerationStructure.Build())
 	{
-		//as 빌드실패 로깅
 		return false;
 	}
 
@@ -127,25 +124,22 @@ bool RayTracer::Build()
 								   &m_rtTargetImage,
 								   m_envCubmapTexture))
 	{
-		//pipeline resource 생성 실패
 		return false;
 	}
 
 	if (!m_pipeline.Build(m_pipelineResources.GetPipelineLayout()))
 	{
-		//pipeline 생성 실패
 		return false;
 	}
 
 	if (!m_shaderBindingTable.Build(&m_pipeline))
 	{
-		//shader binding table 생성 실패
 		return false;
 	}
 
 	if (!BuildCommandBuffers())
 	{
-		//커맨드버퍼 빌드 실패
+		REPORT(EReportType::REPORT_TYPE_ERROR, "Command buffer create failed.");
 		return false;
 	}
 
@@ -173,7 +167,6 @@ bool RayTracer::BuildCommandBuffers()
 		CommandBuffer* curCmdBuffer = m_commandBufferContainer.GetCommandBuffer(i);
 		if (curCmdBuffer == nullptr)
 		{
-			//커맨드 버퍼 취득실패 로깅
 			return false;
 		}
 
@@ -257,7 +250,6 @@ bool RayTracer::BuildCommandBuffers()
 
 			if (!curCmdBuffer->End())
 			{
-				//커맨드 버퍼 기록 실패 로깅
 				return false;
 			}
 		}

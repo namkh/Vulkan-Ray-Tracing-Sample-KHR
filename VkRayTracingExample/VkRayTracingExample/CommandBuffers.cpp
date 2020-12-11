@@ -7,6 +7,7 @@ bool CommandBufferBase::ResetCommandBuffer()
 	{
 		return true;
 	}
+	REPORT(EReportType::REPORT_TYPE_ERROR, "Command buffer reset(vkResetCommandBuffer) failed.");
 	return false;
 }
 
@@ -28,11 +29,12 @@ bool CommandBufferBase::AllocateCommandBuffer(VkCommandPool cmdPool)
 	commandBufferAllocInfo.commandPool = m_commandPool;
 	commandBufferAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	commandBufferAllocInfo.commandBufferCount = 1;
-	if (vkAllocateCommandBuffers(gLogicalDevice, &commandBufferAllocInfo, &m_commandBuffer) == VkResult::VK_SUCCESS)
+	bool res = vkAllocateCommandBuffers(gLogicalDevice, &commandBufferAllocInfo, &m_commandBuffer) == VkResult::VK_SUCCESS;
+	if (!res)
 	{
-		return true;
+		REPORT(EReportType::REPORT_TYPE_ERROR, "VkCommandBuffer allocate(vkAllocateCommandBuffers) failed.");
 	}
-	return false;
+	return res;
 }
 
 bool CommandBufferBase::BeginCommandBuffer()
@@ -40,20 +42,12 @@ bool CommandBufferBase::BeginCommandBuffer()
 	ResetCommandBuffer();
 	VkCommandBufferBeginInfo commandBufBegInfo = {};
 	commandBufBegInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	if (vkBeginCommandBuffer(m_commandBuffer, &commandBufBegInfo) == VkResult::VK_SUCCESS)
-	{
-		return true;
-	}
-	return false;
+	return vkBeginCommandBuffer(m_commandBuffer, &commandBufBegInfo) == VkResult::VK_SUCCESS;
 }
 
 bool CommandBufferBase::EndCommandBuffer()
 {
-	if (vkEndCommandBuffer(m_commandBuffer) == VkResult::VK_SUCCESS)
-	{
-		return true;
-	}
-	return false;
+	return vkEndCommandBuffer(m_commandBuffer) == VkResult::VK_SUCCESS;
 }
 
 bool CommandBuffer::Initialize(VkCommandPool cmdPool)
@@ -80,18 +74,20 @@ bool CommandBuffer::End()
 
 bool StaticCommandBufferContainer::Initialize(VkCommandPool commandPool, uint32_t allocCount)
 {
-	if (commandPool != VK_NULL_HANDLE)
+	if (commandPool == VK_NULL_HANDLE)
 	{
-		m_commandPool = commandPool;
-		m_commandList.resize(allocCount);
-		for (auto& cur : m_commandList)
-		{
-			cur.Initialize(m_commandPool);
-		}
-
-		return true;
+		REPORT(EReportType::REPORT_TYPE_ERROR, "StaticCommandBufferContainer initialize failed.(commandPool is VK_NULL_HANDLE)");
+		return false;
 	}
-	return false;
+
+	m_commandPool = commandPool;
+	m_commandList.resize(allocCount);
+	for (auto& cur : m_commandList)
+	{
+		cur.Initialize(m_commandPool);
+	}
+
+	return true;
 }
 
 CommandBuffer* StaticCommandBufferContainer::GetCommandBuffer(uint32_t index)
@@ -197,13 +193,11 @@ bool SingleTimeCommandBuffer::Begin()
 		}
 		else
 		{
-			//커맨드 버퍼 beg 실패로깅
 			return false;
 		}
 	}
 	else
 	{
-		//1회용 커맨드 버퍼 할당 실패로깅
 		return false;
 	}
 
@@ -239,7 +233,10 @@ bool SingleTimeCommandBuffer::End()
 			} while (res == VK_TIMEOUT);
 			if (res != VkResult::VK_SUCCESS)
 			{
-				//queue submit 실패 로깅
+				if (res == VkResult::VK_ERROR_DEVICE_LOST)
+				{
+					REPORT(EReportType::REPORT_TYPE_ERROR, "Queue submit failed.(Device Lost)");
+				}
 				return false;
 			}
 			FreeCommandBuffers();

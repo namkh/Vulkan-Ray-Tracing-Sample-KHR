@@ -118,7 +118,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>VK_USE_PLATFORM_WIN32_KHR;VK_ENABLE_BETA_EXTENSIONS;STB_IMAGE_IMPLEMENTATION;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>VK_USE_PLATFORM_WIN32_KHR;VK_ENABLE_BETA_EXTENSIONS;STB_IMAGE_IMPLEMENTATION;_DEBUG;_CONSOLE;KCF_WINDOWS_PLATFORM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\VulkanSDK\1.2.154.1\Include;C:\FBX\FBX SDK\2020.1\include;..\External\glm;..\External\stb</AdditionalIncludeDirectories>
     </ClCompile>
@@ -135,7 +135,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>VK_USE_PLATFORM_WIN32_KHR;VK_ENABLE_BETA_EXTENSIONS;STB_IMAGE_IMPLEMENTATION;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>VK_USE_PLATFORM_WIN32_KHR;VK_ENABLE_BETA_EXTENSIONS;STB_IMAGE_IMPLEMENTATION;NDEBUG;_CONSOLE;KCF_WINDOWS_PLATFORM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\VulkanSDK\1.2.154.1\Include;C:\FBX\FBX SDK\2020.1\include;..\External\glm;..\External\stb</AdditionalIncludeDirectories>
     </ClCompile>

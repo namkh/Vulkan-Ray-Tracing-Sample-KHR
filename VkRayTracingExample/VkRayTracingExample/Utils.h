@@ -5,6 +5,7 @@
 #include <math.h>
 #include <chrono>
 #include <map>
+#include <assert.h>
 
 #include "ExternalLib.h"
 #include "Singleton.h"
@@ -15,6 +16,8 @@
 #define RESOURCE_CONTAINER_INITIAL_SIZE 256
 
 #define PI 3.14159265359f
+
+#define Assert(expression, message) assert(expression && message)
 
 //ifdef 필요한가?
 #define IDENTITY_FLOAT4X4			\
@@ -28,6 +31,43 @@ glm::mat4							\
 
 #define NUM_SAMPLES VK_SAMPLE_COUNT_1_BIT
 #define FENCE_TIMEOUT 1000000
+
+enum class EReportType
+{
+	REPORT_TYPE_ERROR = 0,
+	REPORT_TYPE_WARN,
+	REPORT_TYPE_POPUP_MESSAGE,
+	REPORT_TYPE_MESSAGE,
+	REPORT_TYPE_LOG,
+	REPORT_TYPE_END
+};
+
+class Reporter : public TSingleton<Reporter>
+{
+public:
+	Reporter(token) {};
+public:
+	void Report(EReportType reportType, const char* message, long line, const char* file, const char* function, bool withShutdown = false);
+
+protected:
+	void ReportError();
+	void ReportWarning();
+	void ReportMessage();
+	void ReportPopupMessage();
+	void ReportLog();
+
+	void ReportToPopup();
+
+	void Shutdown();
+
+private:
+	static const uint32_t MESSAGE_BUFFER_SIZE = 4096;
+	static const std::string ERROR_TYPES[static_cast<uint32_t>(EReportType::REPORT_TYPE_END)];
+	char m_reportMessageBuffer[MESSAGE_BUFFER_SIZE];
+};
+
+#define REPORT(reportType, message) Reporter::Instance().Report(reportType, message, __LINE__, __FILE__, __FUNCTION__)
+#define REPORT_WITH_SHUTDOWN(reportType, message) Reporter::Instance().Report(reportType, message, __LINE__, __FILE__, __FUNCTION__, true)
 
 class RefCounter
 {
