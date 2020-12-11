@@ -9,6 +9,6 @@ download fbx sdk(ver 2020.1)
 
 install vulkan beta extension graphic dirver
 
-set additional include directories
+set additional include directories(vulkan sdk/fbx sdk)
 
-set visual studio additional library directories
+set additional library directories(vulkan sdk/fbx sdk)
