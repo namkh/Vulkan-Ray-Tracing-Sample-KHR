@@ -5,7 +5,7 @@
 
 #include <glm/glm.hpp>
 
-class SphericalCoordinateMovementCamera
+class SphericalCoordMovementCamera
 {
 private:
 
@@ -14,7 +14,7 @@ private:
 
 public:
 
-	SphericalCoordinateMovementCamera();
+	SphericalCoordMovementCamera();
 
 public:
 

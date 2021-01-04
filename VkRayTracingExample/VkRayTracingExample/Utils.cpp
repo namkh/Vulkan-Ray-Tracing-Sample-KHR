@@ -382,8 +382,8 @@ void SimpleFbxGeometiesLoader::Load(std::string filePath, std::vector<FbxGeometr
 						if (!writeTable[ctrlPointIdx])
 						{
 							fbxGeometryDatas[i].m_positions[ctrlPointIdx] = glm::vec3(fbxMeshList[i]->GetControlPointAt(ctrlPointIdx).mData[0],
-								fbxMeshList[i]->GetControlPointAt(ctrlPointIdx).mData[2],
-								fbxMeshList[i]->GetControlPointAt(ctrlPointIdx).mData[1]);
+																					  fbxMeshList[i]->GetControlPointAt(ctrlPointIdx).mData[2],
+																					  fbxMeshList[i]->GetControlPointAt(ctrlPointIdx).mData[1]);
 
 							ReadNormal(fbxMeshList[i], ctrlPointIdx, vertexCounter, fbxGeometryDatas[i].m_normals[ctrlPointIdx]);
 							ReadTangent(fbxMeshList[i], ctrlPointIdx, vertexCounter, fbxGeometryDatas[i].m_tangents[ctrlPointIdx]);

@@ -2,7 +2,7 @@
 #include <math.h>
 #include <algorithm>
 
-#include "SphericalCoordinateMovementCamera.h"
+#include "SphericalCoordMovementCamera.h"
 #include "CoreEventManager.h"
 #include "GlobalSystemValues.h"
 #include "Utils.h"
@@ -11,10 +11,10 @@
 
 //matrix identity¸¸µéÀÚ
 
-const float	SphericalCoordinateMovementCamera::DEFAULT_ROTATION_SENSITIVITY = 0.005f;
-const float	SphericalCoordinateMovementCamera::DEFAULT_ZOOM_SENSITIVITY = 0.2f;
+const float	SphericalCoordMovementCamera::DEFAULT_ROTATION_SENSITIVITY = 0.005f;
+const float	SphericalCoordMovementCamera::DEFAULT_ZOOM_SENSITIVITY = 0.2f;
 
-SphericalCoordinateMovementCamera::SphericalCoordinateMovementCamera()
+SphericalCoordMovementCamera::SphericalCoordMovementCamera()
 	: m_width(0.0f)
 	, m_height(0.0f)
 	, m_near(0.0f)
@@ -41,7 +41,7 @@ SphericalCoordinateMovementCamera::SphericalCoordinateMovementCamera()
 	memset(&m_mouseEventHandle, 0, sizeof(CoreEventHandle));
 }
 
-bool SphericalCoordinateMovementCamera::Initialize()
+bool SphericalCoordMovementCamera::Initialize()
 {
 	RegistCallbackAndEvents();
 
@@ -56,12 +56,12 @@ bool SphericalCoordinateMovementCamera::Initialize()
 	return true;
 }
 
-void SphericalCoordinateMovementCamera::Destroy()
+void SphericalCoordMovementCamera::Destroy()
 {
 	UnregisterCallbackAndEvents();
 }
 
-bool SphericalCoordinateMovementCamera::Initialize(float width, float height, float nearDistance, float farDistance, float fovAngleY)
+bool SphericalCoordMovementCamera::Initialize(float width, float height, float nearDistance, float farDistance, float fovAngleY)
 {
 	RegistCallbackAndEvents();
 	m_width = width;
@@ -74,7 +74,7 @@ bool SphericalCoordinateMovementCamera::Initialize(float width, float height, fl
 	return true;
 }
 
-void SphericalCoordinateMovementCamera::RegistCallbackAndEvents()
+void SphericalCoordMovementCamera::RegistCallbackAndEvents()
 {
 	m_screenSizeChangedCallbackHandle = gVkDeviceRes.OnRenderTargetSizeChanged.Add
 	(
@@ -84,16 +84,16 @@ void SphericalCoordinateMovementCamera::RegistCallbackAndEvents()
 			m_height = static_cast<float>(gVkDeviceRes.GetHeight());
 		}
 	);
-	m_mouseEventHandle = CoreEventManager::Instance().RegisterMouseEventCallback(this, &SphericalCoordinateMovementCamera::OnMouseEvent);
+	m_mouseEventHandle = CoreEventManager::Instance().RegisterMouseEventCallback(this, &SphericalCoordMovementCamera::OnMouseEvent);
 }
 
-void SphericalCoordinateMovementCamera::UnregisterCallbackAndEvents()
+void SphericalCoordMovementCamera::UnregisterCallbackAndEvents()
 {
 	gVkDeviceRes.OnRenderTargetSizeChanged.Remove(m_screenSizeChangedCallbackHandle);
 	CoreEventManager::Instance().UnregisterEventCallback(m_mouseEventHandle);
 }
 
-void SphericalCoordinateMovementCamera::OnMouseEvent(MouseEvent* mouseEvent)
+void SphericalCoordMovementCamera::OnMouseEvent(MouseEvent* mouseEvent)
 {
 	if (m_useInputEvents)
 	{
@@ -117,7 +117,7 @@ void SphericalCoordinateMovementCamera::OnMouseEvent(MouseEvent* mouseEvent)
 	}
 }
 
-void SphericalCoordinateMovementCamera::OnScreenSizeChanged(ScreenSizeChangedEvent* screenSizeChangedEvent)
+void SphericalCoordMovementCamera::OnScreenSizeChanged(ScreenSizeChangedEvent* screenSizeChangedEvent)
 {
 	if (screenSizeChangedEvent != nullptr)
 	{
@@ -126,92 +126,92 @@ void SphericalCoordinateMovementCamera::OnScreenSizeChanged(ScreenSizeChangedEve
 	}
 }
 
-float SphericalCoordinateMovementCamera::GetFovAngleY()
+float SphericalCoordMovementCamera::GetFovAngleY()
 {
 	return m_fovAngleY;
 }
 
-void SphericalCoordinateMovementCamera::SetFovAngleY(float fovAngleY)
+void SphericalCoordMovementCamera::SetFovAngleY(float fovAngleY)
 {
 	m_needUpdateProjectionMatrix = true;
 	m_fovAngleY = fovAngleY;
 }
 
-float SphericalCoordinateMovementCamera::GetWidth()
+float SphericalCoordMovementCamera::GetWidth()
 {
 	return m_width;
 }
 
-void SphericalCoordinateMovementCamera::SetWidth(float width)
+void SphericalCoordMovementCamera::SetWidth(float width)
 {
 	m_needUpdateProjectionMatrix = true;
 	m_width = width;
 }
 
-float SphericalCoordinateMovementCamera::GetHeight()
+float SphericalCoordMovementCamera::GetHeight()
 {
 	return m_height;
 }
 
-void SphericalCoordinateMovementCamera::SetHeight(float height)
+void SphericalCoordMovementCamera::SetHeight(float height)
 {
 	m_needUpdateProjectionMatrix = true;
 	m_height = height;
 }
 
-float SphericalCoordinateMovementCamera::GetNearDistance()
+float SphericalCoordMovementCamera::GetNearDistance()
 {
 	m_needUpdateProjectionMatrix = true;
 	return m_near;
 }
 
-void SphericalCoordinateMovementCamera::SetNearDistance(float nearDistance)
+void SphericalCoordMovementCamera::SetNearDistance(float nearDistance)
 {
 	m_near = nearDistance;
 }
 
-float SphericalCoordinateMovementCamera::GetFarDistance()
+float SphericalCoordMovementCamera::GetFarDistance()
 {
 	m_needUpdateProjectionMatrix = true;
 	return m_far;
 }
 
-void SphericalCoordinateMovementCamera::SetFarDistance(float farDistance)
+void SphericalCoordMovementCamera::SetFarDistance(float farDistance)
 {
 	m_far = farDistance;
 }
 
-float SphericalCoordinateMovementCamera::GetRadius()
+float SphericalCoordMovementCamera::GetRadius()
 {
 	return m_radaius;
 }
 
-void SphericalCoordinateMovementCamera::SetRadius(float radius)
+void SphericalCoordMovementCamera::SetRadius(float radius)
 {
 	m_radaius = radius;
 }
 
-void SphericalCoordinateMovementCamera::SetSeta(float seta)
+void SphericalCoordMovementCamera::SetSeta(float seta)
 {
 	m_seta = seta;
 }
 
-void SphericalCoordinateMovementCamera::SetPhi(float phi)
+void SphericalCoordMovementCamera::SetPhi(float phi)
 {
 	m_phi = phi;
 }
 
-void SphericalCoordinateMovementCamera::SetRotSensitivity(float sensitivity)
+void SphericalCoordMovementCamera::SetRotSensitivity(float sensitivity)
 {
 	m_rotSensitivity = sensitivity;
 }
 
-void SphericalCoordinateMovementCamera::SetZoomSensitivity(float sensitivity)
+void SphericalCoordMovementCamera::SetZoomSensitivity(float sensitivity)
 {
 	m_zoomSensitivity = sensitivity;
 }
 
-float SphericalCoordinateMovementCamera::GetAspectRatio()
+float SphericalCoordMovementCamera::GetAspectRatio()
 {
 	if (m_height > 0)
 	{
@@ -220,17 +220,17 @@ float SphericalCoordinateMovementCamera::GetAspectRatio()
 	return -1.0f;
 }
 
-glm::vec3	SphericalCoordinateMovementCamera::GetPosition()
+glm::vec3	SphericalCoordMovementCamera::GetPosition()
 {
 	return m_position;
 }
 
-void	SphericalCoordinateMovementCamera::UseInputEvents(bool use)
+void	SphericalCoordMovementCamera::UseInputEvents(bool use)
 {
 	m_useInputEvents = use;
 }
 
-glm::mat4 SphericalCoordinateMovementCamera::GetViewMatrix()
+glm::mat4 SphericalCoordMovementCamera::GetViewMatrix()
 {
 	if (m_needUpdateViewMatrix)
 	{
@@ -247,7 +247,7 @@ glm::mat4 SphericalCoordinateMovementCamera::GetViewMatrix()
 	return m_viewMatrix;
 }
 
-glm::mat4 SphericalCoordinateMovementCamera::GetProjectionMatrix()
+glm::mat4 SphericalCoordMovementCamera::GetProjectionMatrix()
 {
 	if (m_needUpdateProjectionMatrix)
 	{
@@ -257,12 +257,12 @@ glm::mat4 SphericalCoordinateMovementCamera::GetProjectionMatrix()
 	return m_clipMatrix * m_projectionMatrix;
 }
 
-glm::mat4 SphericalCoordinateMovementCamera::GetViewProjectionMatrix()
+glm::mat4 SphericalCoordMovementCamera::GetViewProjectionMatrix()
 {
 	return GetProjectionMatrix() * GetViewMatrix();
 }
 
-glm::mat4 SphericalCoordinateMovementCamera::UpdateProjectionMatrix()
+glm::mat4 SphericalCoordMovementCamera::UpdateProjectionMatrix()
 {
 	return glm::perspective(m_fovAngleY, GetAspectRatio(), m_near, m_far);
 }

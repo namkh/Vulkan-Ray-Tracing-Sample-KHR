@@ -70,7 +70,6 @@ public:
 	CoreSystemEventCallbackBase()
 		: CoreEventCallbackBase()
 	{
-		//부모 생성자에 인자로 받자
 		m_eventType = ECoreEventType::CORE_EVENT_SYSTEM_EVENT;
 	}
 	virtual void ExecEvent(CoreSystemEvent* mouseEvent) = 0;

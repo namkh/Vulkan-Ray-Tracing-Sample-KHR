@@ -2,7 +2,7 @@
 
 #include "VulkanDeviceResources.h"
 #include "ExampleAppBase.h"
-#include "SphericalCoordinateMovementCamera.h"
+#include "SphericalCoordMovementCamera.h"
 
 #include "RenderObjectContainer.h"
 #include "RayTracer.h"
@@ -28,7 +28,7 @@ public:
 
 private:
 
-	SphericalCoordinateMovementCamera m_camera;
+	SphericalCoordMovementCamera m_camera;
 	SimpleCubmapTexture m_envCubmapTexture;
 
 	std::vector<VkSemaphore> m_imageAcquiredSemaphore = {};

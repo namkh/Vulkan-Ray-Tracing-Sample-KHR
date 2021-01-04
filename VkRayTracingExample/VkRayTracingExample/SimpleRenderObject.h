@@ -3,7 +3,6 @@
 #include "GeometryContainer.h"
 #include "MaterialContainer.h"
 #include "Utils.h"
-
 class SampleRenderObjectInstance;
 
 class SampleRenderObjectInstancePerMesh : public UniqueIdentifier

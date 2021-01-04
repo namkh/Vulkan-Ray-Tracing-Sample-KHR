@@ -133,7 +133,7 @@ void ExampleMaterialCreateCode::CreateExampleMaterial(ExampleMaterialType type, 
 		case ExampleMaterialType::EXAMPLE_MAT_TYPE_PAINT_TRANSPARENT:
 			mat->m_mateiralTypeIndex = static_cast<uint32_t>(EMaterialType::SURFACE_TYPE_TRANSPARENT);
 			mat->m_indexOfRefraction = IOR_IRON;
-			mat->m_color = glm::vec4(1.0f, 1.0f, 1.0f, 0.6f);
+			mat->m_color = glm::vec4(1.0f, 1.0f, 1.0f, 0.3f);
 			mat->m_diffuseTex = gTexContainer.CreateTexture("../Resources/Textures/Paint/Paint_basecolor.png");
 			mat->m_normalTex = gTexContainer.CreateTexture("../Resources/Textures/Paint/Paint_normal.png");
 			mat->m_roughnessTex = gTexContainer.CreateTexture("../Resources/Textures/Paint/Paint_roughness.png");

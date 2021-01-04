@@ -16,8 +16,8 @@ public:
 
 public:
 
-	uint32_t ScreenWidth		= 800;
-	uint32_t ScreenHeight		= 600;
+	uint32_t ScreenWidth		= 1280;
+	uint32_t ScreenHeight		= 720;
 	float FovAngleY				= 0.785398163375f;
 	float ViewportNearDistance	= 1.0f;
 	float ViewportFarDistance	= 1000000.0f;
