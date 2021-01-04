@@ -99,8 +99,8 @@ void SphericalCoordMovementCamera::OnMouseEvent(MouseEvent* mouseEvent)
 	{
 		if (mouseEvent->CheckMouseEvent(EMouseEvent::MOUSE_MOVE))
 		{
-			m_seta += mouseEvent->m_dx * DEFAULT_ROTATION_SENSITIVITY * m_rotSensitivity;
-			m_phi += mouseEvent->m_dy * DEFAULT_ROTATION_SENSITIVITY * m_rotSensitivity;
+			m_seta -= mouseEvent->m_dx * DEFAULT_ROTATION_SENSITIVITY * m_rotSensitivity;
+			m_phi -= mouseEvent->m_dy * DEFAULT_ROTATION_SENSITIVITY * m_rotSensitivity;
 			m_needUpdateViewMatrix = true;
 		}
 		if (mouseEvent->CheckMouseEvent(EMouseEvent::MOUSE_WHEEL_UP))

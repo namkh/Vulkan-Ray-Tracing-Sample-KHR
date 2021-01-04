@@ -168,8 +168,8 @@
     <ClCompile Include="SimpleRenderObject.cpp" />
     <ClCompile Include="SimpleMaterial.cpp" />
     <ClCompile Include="SimpleTexture.cpp" />
-    <ClCompile Include="SphericalCoordinateMovementCamera.cpp" />
     <ClCompile Include="RTAccelerationStructure.cpp" />
+    <ClCompile Include="SphericalCoordMovementCamera.cpp" />
     <ClCompile Include="TextureContainer.cpp" />
     <ClCompile Include="Utils.cpp" />
     <ClCompile Include="RayTracer.cpp" />
@@ -202,9 +202,9 @@
     <ClInclude Include="SimpleRenderObject.h" />
     <ClInclude Include="SimpleMaterial.h" />
     <ClInclude Include="SimpleTexture.h" />
-    <ClInclude Include="SphericalCoordinateMovementCamera.h" />
     <ClInclude Include="RTAccelerationStructure.h" />
     <ClInclude Include="Singleton.h" />
+    <ClInclude Include="SphericalCoordMovementCamera.h" />
     <ClInclude Include="TextureContainer.h" />
     <ClInclude Include="Utils.h" />
     <ClInclude Include="RayTracer.h" />

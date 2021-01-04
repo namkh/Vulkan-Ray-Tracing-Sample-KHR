@@ -74,7 +74,10 @@ int Win32Application::Run(ExampleAppBase* pExample, HINSTANCE hInstance, int nCm
 	g_prevMousePosX = cursorPos.x;
 	g_prevMousePosY = cursorPos.y;
 
-	if (!gVkDeviceRes.Initialize(hInstance, m_hwnd, pExample->GetWidth(), pExample->GetHeight(), pExample->UseRayTracing()))
+	g_appWidth = pExample->GetWidth();
+	g_appHeight = pExample->GetHeight();
+
+	if (!gVkDeviceRes.Initialize(hInstance, m_hwnd, g_appWidth, g_appHeight, pExample->UseRayTracing()))
 	{
 		REPORT_WITH_SHUTDOWN(EReportType::REPORT_TYPE_ERROR, "Device resource create failed.");
 	}

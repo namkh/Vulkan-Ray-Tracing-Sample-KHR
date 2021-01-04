@@ -90,9 +90,6 @@
     <ClCompile Include="RenderObjectContainer.cpp">
       <Filter>Example\Object</Filter>
     </ClCompile>
-    <ClCompile Include="SphericalCoordinateMovementCamera.cpp">
-      <Filter>Example\Object</Filter>
-    </ClCompile>
     <ClCompile Include="Utils.cpp">
       <Filter>Example\Utility</Filter>
     </ClCompile>
@@ -107,6 +104,9 @@
     </ClCompile>
     <ClCompile Include="Win32Application.cpp">
       <Filter>Example</Filter>
+    </ClCompile>
+    <ClCompile Include="SphericalCoordMovementCamera.cpp">
+      <Filter>Example\Object</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -170,9 +170,6 @@
     <ClInclude Include="RTShaderBindingTable.h">
       <Filter>Example\RayTracing</Filter>
     </ClInclude>
-    <ClInclude Include="SphericalCoordinateMovementCamera.h">
-      <Filter>Example\Object</Filter>
-    </ClInclude>
     <ClInclude Include="SimpleRenderObject.h">
       <Filter>Example\Object</Filter>
     </ClInclude>
@@ -208,6 +205,9 @@
     </ClInclude>
     <ClInclude Include="Win32Application.h">
       <Filter>Example</Filter>
+    </ClInclude>
+    <ClInclude Include="SphericalCoordMovementCamera.h">
+      <Filter>Example\Object</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

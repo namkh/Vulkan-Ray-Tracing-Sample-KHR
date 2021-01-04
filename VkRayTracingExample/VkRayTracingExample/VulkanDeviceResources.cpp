@@ -141,10 +141,12 @@ bool VulkanDeviceResources::InitDevice()
 			{
 				extensionNames.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 			}
-			if (strcmp(VK_EXT_DEBUG_REPORT_EXTENSION_NAME, extensionProperties[i].extensionName) == 0)
+#if _DEBUG
+			/*if (strcmp(VK_EXT_DEBUG_REPORT_EXTENSION_NAME, extensionProperties[i].extensionName) == 0)
 			{
 				extensionNames.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
-			}
+			}*/
+#endif
 			if (strcmp(VK_KHR_SURFACE_EXTENSION_NAME, extensionProperties[i].extensionName) == 0)
 			{
 				extensionNames.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
@@ -176,13 +178,6 @@ bool VulkanDeviceResources::InitDevice()
 	instanceCretateInfo.pNext = nullptr;
 	instanceCretateInfo.flags = 0;
 	instanceCretateInfo.pApplicationInfo = &appInfo;
-#if _DEBUG
-	instanceCretateInfo.enabledLayerCount = static_cast<uint32_t>(instanceDebugLayerNames.size());
-	instanceCretateInfo.ppEnabledLayerNames = instanceDebugLayerNames.data();
-#else
-	instanceCretateInfo.enabledLayerCount = 0;
-	instanceCretateInfo.ppEnabledLayerNames = nullptr;
-#endif
 	instanceCretateInfo.enabledExtensionCount = static_cast<uint32_t>(extensionNames.size());
 	instanceCretateInfo.ppEnabledExtensionNames = extensionNames.data();
 
@@ -211,7 +206,6 @@ bool VulkanDeviceResources::InitDevice()
 		return false;
 	}
 
-	//대략 0번이 주 그래픽카드일듯하나 체킹해보자
 	/* get device properties */
 	if (m_useRayTracing)
 	{
@@ -363,10 +357,6 @@ bool VulkanDeviceResources::InitDevice()
 				{
 					extensionNames.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
 				}
-				if (strcmp(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME, extensionProperties[i].extensionName) == 0)
-				{
-					extensionNames.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
-				}
 				if (strcmp(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME, extensionProperties[i].extensionName) == 0)
 				{
 					extensionNames.push_back(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME);
@@ -389,6 +379,13 @@ bool VulkanDeviceResources::InitDevice()
 	logicalDeviceCreateInfo.pQueueCreateInfos = &queueCreateInfo;
 	logicalDeviceCreateInfo.enabledLayerCount = 0;
 	logicalDeviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(extensionNames.size());
+#if _DEBUG
+	logicalDeviceCreateInfo.enabledLayerCount = static_cast<uint32_t>(instanceDebugLayerNames.size());
+	logicalDeviceCreateInfo.ppEnabledLayerNames = instanceDebugLayerNames.data();
+#else
+	logicalDeviceCreateInfo.enabledLayerCount = 0;
+	logicalDeviceCreateInfo.ppEnabledLayerNames = nullptr;
+#endif
 	logicalDeviceCreateInfo.ppEnabledExtensionNames = extensionNames.data();
 	logicalDeviceCreateInfo.pEnabledFeatures = &m_physicalDeviceFeatures;
 
