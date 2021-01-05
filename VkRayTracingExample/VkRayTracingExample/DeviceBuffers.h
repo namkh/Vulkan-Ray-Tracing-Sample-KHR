@@ -8,7 +8,7 @@
 class BufferData
 {
 public:
-	virtual bool Initialzie(uint32_t size, VkBufferUsageFlags bufferUsage, VkFlags memRequirementsMask);
+	virtual bool Initialize(uint32_t size, VkBufferUsageFlags bufferUsage, VkFlags memRequirementsMask);
 	bool Reset(uint32_t size, VkBufferUsageFlags bufferUsage, VkFlags memRequirementsMask);
 	bool Resize(uint32_t size);
 	bool UpdateResource(uint8_t* srcData, uint32_t offset, uint32_t size);
@@ -22,6 +22,7 @@ public:
 	VkBuffer&				GetBuffer() { return m_buffer; }
 	VkDeviceMemory&			GetMemory() { return m_memory; }
 	VkDescriptorBufferInfo& GetBufferInfo() { return m_bufferInfo; }
+	VkDeviceAddress			GetDeviceMemoryAddress() { return m_memoryAddress; }
 
 	uint32_t GetBufferSize() { return m_size; }
 	bool IsAllocated() { return m_isAllocated; }
@@ -31,7 +32,7 @@ public:
 	VkBufferUsageFlags      m_bufferUsage = 0;
 	VkFlags					m_memRequirementsMask = 0;
 	VkDeviceMemory			m_memory = nullptr;
-
+	VkDeviceAddress			m_memoryAddress = 0;
 	VkDescriptorBufferInfo	m_bufferInfo = {};
 	
 
@@ -40,7 +41,6 @@ public:
 };
 
 
-//데이터 버퍼들을 베이스를 갖고 추상화를 했을때 좋은점이 있을까?
 template <typename ResourceType>
 class StructuredBufferData
 {
@@ -66,6 +66,7 @@ public:
 	uint32_t				GetStride()			{ return m_stride; }
 	uint32_t				GetNumDatas()		{ return m_numDatas; }
 	uint32_t				GetByteSize()		{ return m_byteSize; }
+	VkDeviceAddress			GetDeviceMemoryAddress() { return m_memoryAddress; }
 
 	bool IsAllocated() { return m_isAllocated; }
 
@@ -75,6 +76,7 @@ protected:
 	VkDescriptorBufferInfo	m_bufferInfo = {};
 	VkBufferUsageFlags		m_bufferUsage = 0;
 	VkFlags					m_memRequirementsMask = 0;
+	VkDeviceAddress			m_memoryAddress = 0;
 
 	uint32_t m_numDatas = 0;
 	uint32_t m_stride = 0;
@@ -111,6 +113,11 @@ bool StructuredBufferData<ResourceType>::Initialzie(VkBufferUsageFlags bufferUsa
 	m_bufferInfo.buffer = m_buffer;
 	m_bufferInfo.offset = 0;
 	m_bufferInfo.range = m_byteSize;
+
+	if ((m_bufferUsage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) != 0)
+	{
+		m_memoryAddress = GetBufferDeviceAddress(m_buffer);
+	}
 
 	m_isAllocated = true;
 
@@ -182,10 +189,18 @@ bool StructuredBufferData<ResourceType>::AllocateMemory()
 	VkMemoryRequirements memReqs;
 	vkGetBufferMemoryRequirements(gLogicalDevice, m_buffer, &memReqs);
 
+	VkMemoryAllocateFlagsInfo allocateFlagsInfo = {};
+	allocateFlagsInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
+	allocateFlagsInfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+
 	VkMemoryAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	allocInfo.allocationSize = memReqs.size;
 	allocInfo.memoryTypeIndex = 0;
+	if ((m_bufferUsage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) != 0)
+	{
+		allocInfo.pNext = &allocateFlagsInfo;
+	}
 
 	if (!VulkanDeviceResources::Instance().MemoryTypeFromProperties(memReqs.memoryTypeBits,
 		m_memRequirementsMask,
@@ -285,213 +300,6 @@ void StructuredBufferData<ResourceType>::UpdateResource(ResourceType& srcData, s
 	}
 	vkUnmapMemory(gLogicalDevice, m_memory);
 
-}
-
-template <typename ResourceType>
-class RtBufferData : public StructuredBufferData<ResourceType>
-{
-public:
-	virtual bool Initialzie(VkBufferUsageFlags bufferUsage, VkFlags memRequirementsMask, uint32_t numDatas = 1) override;
-	virtual void Destroy() override;
-protected:
-	virtual bool CreateBuffer();
-	virtual bool AllocateMemory();
-
-public:
-	virtual void UpdateResource(ResourceType* srcData, uint32_t bufferCount) override;
-	virtual void UpdateResource(ResourceType& srcData, uint32_t index = 0) override;
-
-public:
-	VkDeviceAddress	GetDeviceAddress() { return m_deviceAddress; }
-
-protected:
-	VkBuffer m_stagingBuffer = VK_NULL_HANDLE;
-	VkDeviceMemory m_stagingMemory = VK_NULL_HANDLE;
-
-	VkDeviceAddress m_deviceAddress = 0;
-};
-
-template <typename ResourceType>
-bool RtBufferData<ResourceType>::Initialzie(VkBufferUsageFlags bufferUsage, VkFlags memRequirementsMask, uint32_t numDatas)
-{
-	if (!StructuredBufferData<ResourceType>::Initialzie(bufferUsage, memRequirementsMask, numDatas))
-	{
-		return false;
-	}
-	m_deviceAddress = GetBufferDeviceAddress(StructuredBufferData<ResourceType>::GetBuffer());
-	return true;
-}
-
-template <typename ResourceType>
-void RtBufferData<ResourceType>::Destroy()
-{
-	StructuredBufferData<ResourceType>::Destroy();
-
-	if (m_stagingBuffer != VK_NULL_HANDLE)
-	{
-		vkDestroyBuffer(gLogicalDevice, m_stagingBuffer, nullptr);
-	}
-	if (m_stagingMemory != VK_NULL_HANDLE)
-	{
-		vkFreeMemory(gLogicalDevice, m_stagingMemory, nullptr);
-	}
-}
-
-template <typename ResourceType>
-bool RtBufferData<ResourceType>::CreateBuffer()
-{
-	VkBufferCreateInfo stagingBufferCreateInfo = {};
-	stagingBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	stagingBufferCreateInfo.pNext = nullptr;
-	stagingBufferCreateInfo.flags = 0;
-	stagingBufferCreateInfo.size = static_cast<VkDeviceSize>(StructuredBufferData<ResourceType>::GetStride()) * static_cast<VkDeviceSize>(StructuredBufferData<ResourceType>::GetNumDatas());
-	stagingBufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-	stagingBufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-	VkBufferCreateInfo deviceBufferCreateInfo = stagingBufferCreateInfo;
-	deviceBufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_RAY_TRACING_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-	
-	VkResult res = vkCreateBuffer(gLogicalDevice, &stagingBufferCreateInfo, nullptr, &m_stagingBuffer);
-	if (res != VkResult::VK_SUCCESS)
-	{
-		REPORT(EReportType::REPORT_TYPE_ERROR, "Staging buffer create failed.");
-		return false;
-	}
-
-	res = vkCreateBuffer(gLogicalDevice, &deviceBufferCreateInfo, nullptr, &StructuredBufferData<ResourceType>::GetBuffer());
-	if (res != VkResult::VK_SUCCESS)
-	{
-		REPORT(EReportType::REPORT_TYPE_ERROR, "Buffer create failed.");
-		return false;
-	}
-	return true;
-}
-
-template <typename ResourceType>
-bool RtBufferData<ResourceType>::AllocateMemory()
-{
-	VkMemoryRequirements stagingMemReqs;
-	VkMemoryRequirements deviceMemReqs;
-	vkGetBufferMemoryRequirements(gLogicalDevice, m_stagingBuffer, &stagingMemReqs);
-	vkGetBufferMemoryRequirements(gLogicalDevice, StructuredBufferData<ResourceType>::GetBuffer(), &deviceMemReqs);
-
-	VkMemoryAllocateFlagsInfo memAllocateFlagsInfo = {};
-	memAllocateFlagsInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
-	memAllocateFlagsInfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
-
-	VkMemoryAllocateInfo stagingMemAllocInfo = {};
-	stagingMemAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	stagingMemAllocInfo.pNext = &memAllocateFlagsInfo;
-	stagingMemAllocInfo.allocationSize = stagingMemReqs.size;
-	stagingMemAllocInfo.memoryTypeIndex = 0;
-
-	VkMemoryAllocateInfo deviceMemAllocInfo = stagingMemAllocInfo;
-	deviceMemAllocInfo.allocationSize = deviceMemReqs.size;
-
-	//메모리 프로퍼티에서 할당 메모리 타입을 찾는다
-	if (!VulkanDeviceResources::Instance().MemoryTypeFromProperties(stagingMemReqs.memoryTypeBits,
-																	VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
-																	VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-																	&stagingMemAllocInfo.memoryTypeIndex))
-	{
-		REPORT(EReportType::REPORT_TYPE_ERROR, "Not found device meory type.");
-		return false;
-	}
-
-	if (!VulkanDeviceResources::Instance().MemoryTypeFromProperties(deviceMemReqs.memoryTypeBits,
-																	VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-																	&deviceMemAllocInfo.memoryTypeIndex))
-	{
-		REPORT(EReportType::REPORT_TYPE_ERROR, "Not found device meory type.");
-		return false;
-	}
-
-	if (vkAllocateMemory(gLogicalDevice, &stagingMemAllocInfo, nullptr, &m_stagingMemory))
-	{
-		REPORT(EReportType::REPORT_TYPE_ERROR, "Device memory allocation failed.");
-		return false;
-	}
-
-	if (vkAllocateMemory(gLogicalDevice, &deviceMemAllocInfo, nullptr, &StructuredBufferData<ResourceType>::GetMemory()))
-	{
-		REPORT(EReportType::REPORT_TYPE_ERROR, "Device memory allocation failed.");
-		return false;
-	}
-
-	if (vkBindBufferMemory(gLogicalDevice, m_stagingBuffer, m_stagingMemory, 0) != VkResult::VK_SUCCESS)
-	{
-		REPORT(EReportType::REPORT_TYPE_ERROR, "Buffer bind failed.");
-		return false;
-	}
-
-	if (vkBindBufferMemory(gLogicalDevice, StructuredBufferData<ResourceType>::GetBuffer(), StructuredBufferData<ResourceType>::GetMemory(), 0) != VkResult::VK_SUCCESS)
-	{
-		REPORT(EReportType::REPORT_TYPE_ERROR, "Buffer bind failed.");
-		return false;
-	}
-
-	return true;
-}
-
-template <typename ResourceType>
-void RtBufferData<ResourceType>::UpdateResource(ResourceType* srcData, uint32_t bufferCount)
-{
-	if (bufferCount == StructuredBufferData<ResourceType>::GetNumDatas())
-	{
-		uint8_t* data = nullptr;
-		VkResult res = vkMapMemory(gLogicalDevice, m_stagingMemory, 0, sizeof(ResourceType), 0, (void**)&data);
-		if (res == VkResult::VK_SUCCESS)
-		{
-			memcpy(data, srcData, StructuredBufferData<ResourceType>::GetByteSize());
-			vkUnmapMemory(gLogicalDevice, m_stagingMemory);
-		}
-		else
-		{
-			REPORT(EReportType::REPORT_TYPE_WARN, "Buffer memory map failed");
-		}
-
-		SingleTimeCommandBuffer singleTimeCmdBuf;
-		singleTimeCmdBuf.Begin();
-		VkBufferCopy bufferCopy = {};
-		bufferCopy.size = StructuredBufferData<ResourceType>::GetByteSize();
-		vkCmdCopyBuffer(singleTimeCmdBuf.GetCommandBuffer(), m_stagingBuffer, StructuredBufferData<ResourceType>::GetBuffer(), 1, &bufferCopy);
-		singleTimeCmdBuf.End();
-	}
-	else
-	{
-		REPORT(EReportType::REPORT_TYPE_WARN, "Src buffer and dst buffer are have different size");
-	}
-}
-
-template <typename ResourceType>
-void RtBufferData<ResourceType>::UpdateResource(ResourceType& srcData, uint32_t index)
-{
-	if (index >= StructuredBufferData<ResourceType>::GetNumDatas())
-	{
-		REPORT(EReportType::REPORT_TYPE_WARN, "An invalid index was requested.");
-		return;
-	}
-
-	uint8_t* data = nullptr;
-	VkResult res = vkMapMemory(gLogicalDevice, m_stagingMemory, 0, sizeof(ResourceType), 0, (void**)&data);
-	if (res == VkResult::VK_SUCCESS)
-	{
-		data += sizeof(ResourceType) * index;
-		memcpy(data, &srcData, sizeof(ResourceType));
-
-		vkUnmapMemory(gLogicalDevice, m_stagingMemory);
-	}
-	else
-	{
-		REPORT(EReportType::REPORT_TYPE_WARN, "Buffer memory map failed");
-	}
-
-	SingleTimeCommandBuffer singleTimeCmdBuf;
-	singleTimeCmdBuf.Begin();
-	VkBufferCopy bufferCopy = {};
-	bufferCopy.size = StructuredBufferData<ResourceType>::GetByteSize();
-	vkCmdCopyBuffer(singleTimeCmdBuf.GetCommandBuffer(), m_stagingBuffer, StructuredBufferData<ResourceType>::GetBuffer(), 1, &bufferCopy);
-	singleTimeCmdBuf.End();
 }
 
 struct DefaultVertex
@@ -619,41 +427,11 @@ protected:
 	VkDeviceAddress m_deviceAddress = 0;
 };
 
-class RayTracingScratchBuffer
+class RayTracingScratchBuffer : public BufferData
 {
 public:
-	bool Initialize(VkAccelerationStructureKHR as);
-	void Destroy();
-
-	VkBuffer GetBuffer() { return m_buffer; }
-	VkDeviceMemory GetDeviceMemory() { return m_memory; }
+	virtual bool Initialize(uint32_t size, VkBufferUsageFlags bufferUsage, VkFlags memRequirementsMask) override;
 	VkDeviceAddress GetDeviceMemoryAddress() { return m_memoryAddress; }
-
-	bool IsAllocated() { return m_isAllocated; }
-
 private:
-	VkBuffer		m_buffer				= VK_NULL_HANDLE;
-	VkDeviceMemory	m_memory				= VK_NULL_HANDLE;
-	VkDeviceAddress	m_memoryAddress			= 0;
-
-	bool m_isAllocated = false;
-};
-
-class RayTracingAccelerationStructureMemory
-{
-public:
-	bool Initialize(VkAccelerationStructureKHR as);
-	void Destroy();
-
-	VkDeviceMemory GetDeviceMemory() { return m_memory; }
-	uint64_t GetDeviceMemoryAddress() { return m_memoryAddress; }
-
-	bool IsAllocated() { return m_isAllocated; }
-	
-private:
-	VkDeviceMemory m_memory = VK_NULL_HANDLE;
-	uint64_t m_memoryAddress = 0;
-
-	bool m_isAllocated = false;
-
+	VkDeviceAddress	m_memoryAddress = 0;
 };

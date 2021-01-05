@@ -80,13 +80,13 @@ bool VulkanRayTracingExample::Initialize()
 	curInstance = m_renderObjects[0]->CreateInstance(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 15.0f)) * modelRotMat * modelScaleMat);
 	curInstance->SetOverrideMaterial(ExampleMaterialType::EXAMPLE_MAT_TYPE_METAL2);
 	m_roteteInstances.push_back(curInstance);
-	curInstance = m_renderObjects[0]->CreateInstance(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -15.0f)) * modelRotMat * modelScaleMat);
+	curInstance = m_renderObjects[0]->CreateInstance(glm::translate(glm::mat4(1.0f), glm::vec3(-15.0f, 0.0f, 0.0f)) * modelRotMat * modelScaleMat);
 	curInstance->SetOverrideMaterial(ExampleMaterialType::EXAMPLE_MAT_TYPE_METAL3);
 	m_roteteInstances.push_back(curInstance);
-	curInstance = m_renderObjects[0]->CreateInstance(glm::translate(glm::mat4(1.0f), glm::vec3(15.0f, 0.0f, 0.0f)) * modelRotMat * modelScaleMat);
+	curInstance = m_renderObjects[0]->CreateInstance(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -15.0f)) * modelRotMat * modelScaleMat);
 	curInstance->SetOverrideMaterial(ExampleMaterialType::EXAMPLE_MAT_TYPE_GLASS);
 	m_roteteInstances.push_back(curInstance);
-	curInstance = m_renderObjects[0]->CreateInstance(glm::translate(glm::mat4(1.0f), glm::vec3(-15.0f, 0.0f, 0.0f)) * modelRotMat * modelScaleMat);
+	curInstance = m_renderObjects[0]->CreateInstance(glm::translate(glm::mat4(1.0f), glm::vec3(15.0f, 0.0f, 0.0f)) * modelRotMat * modelScaleMat);
 	curInstance->SetOverrideMaterial(ExampleMaterialType::EXAMPLE_MAT_TYPE_PAINT_TRANSPARENT);
 	m_roteteInstances.push_back(curInstance);
 	

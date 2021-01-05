@@ -95,11 +95,11 @@ bool RTPipeline::Build(VkPipelineLayout pipelineLayout)
 	rayTracingPipeLineCreateInfo.pStages = shaderStageCreateInfos.data();
 	rayTracingPipeLineCreateInfo.groupCount = static_cast<uint32_t>(m_shaderGroupCreateInfos.size());
 	rayTracingPipeLineCreateInfo.pGroups = m_shaderGroupCreateInfos.data();
-	rayTracingPipeLineCreateInfo.maxRecursionDepth = 4;
+	rayTracingPipeLineCreateInfo.maxPipelineRayRecursionDepth = 4;
 	rayTracingPipeLineCreateInfo.layout = pipelineLayout;
-	rayTracingPipeLineCreateInfo.libraries = pipelineLibraryCreateInfo;
+	rayTracingPipeLineCreateInfo.pLibraryInfo = &pipelineLibraryCreateInfo;
 
-	if (vkCreateRayTracingPipelinesKHR(gLogicalDevice, VK_NULL_HANDLE, 1, &rayTracingPipeLineCreateInfo, nullptr, &m_pipeline) != VkResult::VK_SUCCESS)
+	if (vkCreateRayTracingPipelinesKHR(gLogicalDevice, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &rayTracingPipeLineCreateInfo, nullptr, &m_pipeline) != VkResult::VK_SUCCESS)
 	{
 		REPORT(EReportType::REPORT_TYPE_ERROR, "Pipeline create failed.");
 		return false;

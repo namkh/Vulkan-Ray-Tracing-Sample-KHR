@@ -2,7 +2,7 @@
 #include "DeviceBuffers.h"
 #include "Utils.h"
 
-bool BufferData::Initialzie(uint32_t size, VkBufferUsageFlags bufferUsage, VkFlags memRequirementsMask)
+bool BufferData::Initialize(uint32_t size, VkBufferUsageFlags bufferUsage, VkFlags memRequirementsMask)
 {
 	if (m_isAllocated)
 	{
@@ -33,6 +33,11 @@ bool BufferData::Initialzie(uint32_t size, VkBufferUsageFlags bufferUsage, VkFla
 	m_bufferInfo.offset = 0;
 	m_bufferInfo.range = m_size;
 
+	if ((m_bufferUsage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) != 0)
+	{
+		m_memoryAddress = GetBufferDeviceAddress(m_buffer);
+	}
+
 	m_isAllocated = true;
 
 	return true;
@@ -41,7 +46,7 @@ bool BufferData::Initialzie(uint32_t size, VkBufferUsageFlags bufferUsage, VkFla
 bool BufferData::Reset(uint32_t size, VkBufferUsageFlags bufferUsage, VkFlags memRequirementsMask)
 {
 	Destroy();
-	if (!Initialzie(m_size, bufferUsage, memRequirementsMask))
+	if (!Initialize(m_size, bufferUsage, memRequirementsMask))
 	{
 		return false;
 	}
@@ -117,10 +122,18 @@ bool BufferData::AllocateMemory()
 	VkMemoryRequirements memReqs;
 	vkGetBufferMemoryRequirements(gLogicalDevice, m_buffer, &memReqs);
 
+	VkMemoryAllocateFlagsInfo allocateFlagsInfo = {};
+	allocateFlagsInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
+	allocateFlagsInfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+
 	VkMemoryAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	allocInfo.allocationSize = memReqs.size;
 	allocInfo.memoryTypeIndex = 0;
+	if ((m_bufferUsage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) != 0)
+	{
+		allocInfo.pNext = &allocateFlagsInfo;
+	}
 
 	if (!VulkanDeviceResources::Instance().MemoryTypeFromProperties(memReqs.memoryTypeBits,
 																	m_memRequirementsMask,
@@ -699,6 +712,17 @@ bool AsIndexBuffer::UploadData(std::vector<uint32_t>& indices)
 	return true;
 }
 
+bool RayTracingScratchBuffer::Initialize(uint32_t size, VkBufferUsageFlags bufferUsage, VkFlags memRequirementsMask)
+{
+	if (BufferData::Initialize(size, bufferUsage, memRequirementsMask))
+	{
+		m_memoryAddress = GetBufferDeviceAddress(m_buffer);
+		return true;
+	}
+	return false;
+}
+
+/*
 bool RayTracingScratchBuffer::Initialize(VkAccelerationStructureKHR as)
 {
 	if (m_isAllocated)
@@ -782,7 +806,8 @@ void RayTracingScratchBuffer::Destroy()
 	}
 	m_isAllocated = false;
 }
-
+*/
+/*
 bool RayTracingAccelerationStructureMemory::Initialize(VkAccelerationStructureKHR as)
 {
 	if (m_isAllocated)
@@ -846,3 +871,4 @@ void RayTracingAccelerationStructureMemory::Destroy()
 	m_isAllocated = false;
 }
 
+*/

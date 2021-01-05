@@ -195,7 +195,8 @@ bool RayTracer::BuildCommandBuffers()
 				nullptr
 			);
 
-			VkStridedBufferRegionKHR callableShaderSbtEntry = {};
+			VkStridedDeviceAddressRegionKHR callableShaderSbtEntry = {};
+
 			vkCmdTraceRaysKHR
 			(
 				vkCmdBuf,

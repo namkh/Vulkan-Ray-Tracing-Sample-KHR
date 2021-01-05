@@ -67,11 +67,16 @@ public:
 	uint32_t GetPresentQueueFamilyIndex() { return m_presentQueueFamilyIndex; }
 	uint32_t GetComputeQueueFamilyIndex() { return m_computeQueueFamilyIndex; };
 
+	
+
 	VkPhysicalDeviceProperties&					GetPhysicalDeviceProperty()				{ return m_physicalDeviceProperty; }
 	VkPhysicalDeviceFeatures&					GetPhysicalDeviceFeatures()				{ return m_physicalDeviceFeatures; }
 	VkPhysicalDeviceMemoryProperties&			GetPhysicalDeviceMemoryProperty()		{ return m_physicalDeviceMemoryProperty; }
-	VkPhysicalDeviceRayTracingPropertiesKHR&	GetPhysicalDeviceRayTracingProperties() { return m_physicalDeviceRayTracingProperties; }
-	VkPhysicalDeviceRayTracingFeaturesKHR&		GetPhysicalDeviceRayTracingFeatures()	{ return m_physicalDeviceRayTracingFeatures; }
+	
+	VkPhysicalDeviceRayTracingPipelinePropertiesKHR&	GetPhysicalDeviceRayTracingPipelineProperties()		{ return m_physicalDeviceRayTracingPipelineProperties; }
+	VkPhysicalDeviceRayTracingPipelineFeaturesKHR&		GetPhysicalDeviceRayTracingPipelineFeatures()		{ return m_physicalDeviceRayTracingPipelineFeatures; }
+	VkPhysicalDeviceAccelerationStructurePropertiesKHR&	GetPhysicalDeviceAccelerationStructureProperties()	{ return m_physicalDeviceAccelerationStructureProperties; }
+	VkPhysicalDeviceAccelerationStructureFeaturesKHR&	GetPhysicalDeviceAccelerationStructureFeatures()	{ return m_physicalDeviceAccelerationStructureFeatures; }
 
 	DepthBuffer* GetDepthBuffer() { return &m_depthBuffer; }
 	SwapchainBuffer* GetSwapChainBuffer(int index) 
@@ -111,11 +116,14 @@ protected:
 	VkExtent2D					 m_swapchainExtent;
 	DepthBuffer					 m_depthBuffer;
 	
-	VkPhysicalDeviceProperties				m_physicalDeviceProperty = {};
-	VkPhysicalDeviceFeatures				m_physicalDeviceFeatures = {};
-	VkPhysicalDeviceMemoryProperties		m_physicalDeviceMemoryProperty = {};
-	VkPhysicalDeviceRayTracingPropertiesKHR m_physicalDeviceRayTracingProperties = {};
-	VkPhysicalDeviceRayTracingFeaturesKHR	m_physicalDeviceRayTracingFeatures = {};
+	VkPhysicalDeviceProperties						m_physicalDeviceProperty = {};
+	VkPhysicalDeviceFeatures						m_physicalDeviceFeatures = {};
+	VkPhysicalDeviceMemoryProperties				m_physicalDeviceMemoryProperty = {};
+
+	VkPhysicalDeviceRayTracingPipelinePropertiesKHR		m_physicalDeviceRayTracingPipelineProperties = {};
+	VkPhysicalDeviceRayTracingPipelineFeaturesKHR		m_physicalDeviceRayTracingPipelineFeatures = {};
+	VkPhysicalDeviceAccelerationStructurePropertiesKHR	m_physicalDeviceAccelerationStructureProperties = {};
+	VkPhysicalDeviceAccelerationStructureFeaturesKHR	m_physicalDeviceAccelerationStructureFeatures = {};
 
 	std::vector<VkLayerProperties>			m_layerProperties;
 	std::vector<VkQueueFamilyProperties>	m_queueFamilyProperties;

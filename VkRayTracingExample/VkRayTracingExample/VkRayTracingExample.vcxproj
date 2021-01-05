@@ -118,14 +118,14 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>VK_USE_PLATFORM_WIN32_KHR;VK_ENABLE_BETA_EXTENSIONS;STB_IMAGE_IMPLEMENTATION;_DEBUG;_CONSOLE;KCF_WINDOWS_PLATFORM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>VK_USE_PLATFORM_WIN32_KHR;STB_IMAGE_IMPLEMENTATION;_DEBUG;_CONSOLE;KCF_WINDOWS_PLATFORM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\VulkanSDK\1.2.154.1\Include;C:\FBX\FBX SDK\2020.1\include;..\External\glm;..\External\stb</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\VulkanSDK\1.2.162.0\Include;C:\FBX\FBX SDK\2020.1\include;..\External\glm;..\External\stb</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\VulkanSDK\1.2.154.1\Lib;C:\FBX\FBX SDK\2020.1\lib\vs2017\x64\debug</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\VulkanSDK\1.2.162.0\Lib;C:\FBX\FBX SDK\2020.1\lib\vs2017\x64\debug</AdditionalLibraryDirectories>
       <AdditionalDependencies>vulkan-1.lib;libfbxsdk.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;VkLayer_utils.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -135,16 +135,16 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>VK_USE_PLATFORM_WIN32_KHR;VK_ENABLE_BETA_EXTENSIONS;STB_IMAGE_IMPLEMENTATION;NDEBUG;_CONSOLE;KCF_WINDOWS_PLATFORM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>VK_USE_PLATFORM_WIN32_KHR;STB_IMAGE_IMPLEMENTATION;NDEBUG;_CONSOLE;KCF_WINDOWS_PLATFORM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\VulkanSDK\1.2.154.1\Include;C:\FBX\FBX SDK\2020.1\include;..\External\glm;..\External\stb</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\VulkanSDK\1.2.162.0\Include;C:\FBX\FBX SDK\2020.1\include;..\External\glm;..\External\stb</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\VulkanSDK\1.2.154.1\Lib;C:\FBX\FBX SDK\2020.1\lib\vs2017\x64\release</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\VulkanSDK\1.2.162.0\Lib;C:\FBX\FBX SDK\2020.1\lib\vs2017\x64\release</AdditionalLibraryDirectories>
       <AdditionalDependencies>vulkan-1.lib;VkLayer_utils.lib;libfbxsdk.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>

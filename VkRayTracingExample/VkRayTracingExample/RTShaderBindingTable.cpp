@@ -14,28 +14,50 @@ bool RTShaderBindingTable::Build(RTPipeline* pipeline)
 	return true;
 }
 
+bool RTShaderBindingTable::CreateShaderBindingTable(ERTShaderGroupType groupType, uint32_t shaderGroupCount, std::vector<uint8_t>& shaderHandleBuffer, uint32_t offset, BufferData* buffer)
+{
+	uint32_t shaderGroupHandleSize = VulkanDeviceResources::Instance().GetPhysicalDeviceRayTracingPipelineProperties().shaderGroupHandleSize;
+	uint32_t shaderGroupBaseAlignment = VulkanDeviceResources::Instance().GetPhysicalDeviceRayTracingPipelineProperties().shaderGroupBaseAlignment;
+
+	if (shaderGroupCount > 0)
+	{
+		uint32_t shaderBindingTableSize = shaderGroupBaseAlignment * shaderGroupCount;
+		if (buffer->IsAllocated())
+		{
+			if (!buffer->Resize(shaderBindingTableSize))
+			{
+				return false;
+			}
+		}
+		else
+		{
+			if (!buffer->Initialize(shaderBindingTableSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT))
+			{
+				return false;
+			}
+		}
+		
+		for (uint32_t i = 0; i < shaderGroupCount; i++)
+		{
+			if (!buffer->UpdateResource(shaderHandleBuffer.data() + offset + i * shaderGroupHandleSize, i * shaderGroupBaseAlignment, shaderGroupHandleSize))
+			{
+				return false;
+			}
+		}
+
+		m_shaderSbtEntries[groupType].deviceAddress = buffer->GetDeviceMemoryAddress();
+		m_shaderSbtEntries[groupType].stride = shaderGroupBaseAlignment;
+		m_shaderSbtEntries[groupType].size = shaderBindingTableSize;
+	}
+	return true;
+}
+
 bool RTShaderBindingTable::Refresh()
 {
 	uint32_t shaderGroupCount = m_pipeline->GetShaderGroupCount();
-	uint32_t shaderGroupHandleSize = VulkanDeviceResources::Instance().GetPhysicalDeviceRayTracingProperties().shaderGroupHandleSize;
-	uint32_t shaderGroupBaseAlignment = VulkanDeviceResources::Instance().GetPhysicalDeviceRayTracingProperties().shaderGroupBaseAlignment;
-	uint32_t shaderBindingTableBufferSize = shaderGroupBaseAlignment * shaderGroupCount;
+	uint32_t shaderGroupHandleSize = VulkanDeviceResources::Instance().GetPhysicalDeviceRayTracingPipelineProperties().shaderGroupHandleSize;
+	uint32_t shaderGroupBaseAlignment = VulkanDeviceResources::Instance().GetPhysicalDeviceRayTracingPipelineProperties().shaderGroupBaseAlignment;
 	uint32_t shaderBindingHandleBufferSize = shaderGroupHandleSize * shaderGroupCount;
-
-	if (m_shaderBindingTableBuffer.IsAllocated())
-	{
-		if (!m_shaderBindingTableBuffer.Resize(shaderBindingTableBufferSize))
-		{
-			return false;
-		}
-	}
-	else
-	{
-		if (!m_shaderBindingTableBuffer.Initialzie(shaderBindingTableBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT))
-		{
-			return false;
-		}
-	}
 
 	std::vector<uint8_t> shaderHandleBuffer(shaderBindingHandleBufferSize);
 	if (vkGetRayTracingShaderGroupHandlesKHR(gLogicalDevice, m_pipeline->GetPipeline(), 0, shaderGroupCount, shaderBindingHandleBufferSize, shaderHandleBuffer.data()) != VkResult::VK_SUCCESS)
@@ -43,63 +65,49 @@ bool RTShaderBindingTable::Refresh()
 		return false;
 	}
 
-	for (uint32_t i = 0; i < shaderGroupCount; i++)
-	{
-		if (!m_shaderBindingTableBuffer.UpdateResource(shaderHandleBuffer.data() + (i * shaderGroupHandleSize), i * shaderGroupBaseAlignment, shaderGroupHandleSize))
-		{
-			return false;
-		}
-	}
-
-	if (m_pipeline->GetRayGenShaderGroupCount() > 0)
-	{
-		m_shaderSbtEntries[SHADER_GROUP_TYPE_RAY_GEN].buffer = m_shaderBindingTableBuffer.GetBuffer();
-		m_shaderSbtEntries[SHADER_GROUP_TYPE_RAY_GEN].offset = static_cast<VkDeviceSize>(0u * shaderGroupBaseAlignment);
-		m_shaderSbtEntries[SHADER_GROUP_TYPE_RAY_GEN].stride = shaderGroupBaseAlignment;
-		m_shaderSbtEntries[SHADER_GROUP_TYPE_RAY_GEN].size = shaderBindingTableBufferSize;
-	}
-
-	if (m_pipeline->GetMissShaderGroupCount() > 0)
-	{
-		m_shaderSbtEntries[SHADER_GROUP_TYPE_MISS].buffer = m_shaderBindingTableBuffer.GetBuffer();
-		m_shaderSbtEntries[SHADER_GROUP_TYPE_MISS].offset = static_cast<VkDeviceSize>(m_pipeline->GetRayGenShaderGroupCount() * shaderGroupBaseAlignment);
-		m_shaderSbtEntries[SHADER_GROUP_TYPE_MISS].stride = shaderGroupBaseAlignment;
-		m_shaderSbtEntries[SHADER_GROUP_TYPE_MISS].size = shaderBindingTableBufferSize;
-	}
+	uint32_t offset = 0;
+	uint32_t raygenShaderGroupCount = m_pipeline->GetRayGenShaderGroupCount();
+	CreateShaderBindingTable(SHADER_GROUP_TYPE_RAY_GEN, raygenShaderGroupCount, shaderHandleBuffer, offset, &m_raygenShaderBindingTableBuffer);
 	
-	if (m_pipeline->GetHitShaderGroupCount() > 0)
-	{
-		m_shaderSbtEntries[SHADER_GROUP_TYPE_HIT].buffer = m_shaderBindingTableBuffer.GetBuffer();
-		m_shaderSbtEntries[SHADER_GROUP_TYPE_HIT].offset = static_cast<VkDeviceSize>((m_pipeline->GetRayGenShaderGroupCount()
-																						+ m_pipeline->GetMissShaderGroupCount())
-																						* shaderGroupBaseAlignment);
-		m_shaderSbtEntries[SHADER_GROUP_TYPE_HIT].stride = shaderGroupBaseAlignment;
-		m_shaderSbtEntries[SHADER_GROUP_TYPE_HIT].size = shaderBindingTableBufferSize;
-	}
-
-	if (m_pipeline->GetHitShaderGroupCount() > 0)
-	{
-		m_shaderSbtEntries[SHADER_GROUP_TYPE_CALLABLE].buffer = m_shaderBindingTableBuffer.GetBuffer();
-		m_shaderSbtEntries[SHADER_GROUP_TYPE_CALLABLE].offset = static_cast<VkDeviceSize>((m_pipeline->GetRayGenShaderGroupCount()
-																							+ m_pipeline->GetMissShaderGroupCount()
-																							+ m_pipeline->GetHitShaderGroupCount())
-																							* shaderGroupBaseAlignment);
-		m_shaderSbtEntries[SHADER_GROUP_TYPE_CALLABLE].stride = shaderGroupBaseAlignment;
-		m_shaderSbtEntries[SHADER_GROUP_TYPE_CALLABLE].size = shaderBindingTableBufferSize;
-	}
-
+	offset += shaderGroupHandleSize * raygenShaderGroupCount;
+	uint32_t missShaderGroupCount = m_pipeline->GetMissShaderGroupCount();
+	CreateShaderBindingTable(SHADER_GROUP_TYPE_MISS, missShaderGroupCount, shaderHandleBuffer, offset, &m_missShaderBindingTableBuffer);
+	
+	offset += shaderGroupHandleSize * missShaderGroupCount;
+	uint32_t hitShaderGroupCount = m_pipeline->GetHitShaderGroupCount();
+	CreateShaderBindingTable(SHADER_GROUP_TYPE_HIT, hitShaderGroupCount, shaderHandleBuffer, offset, &m_hitShaderBindingTableBuffer);
+	
+	offset += shaderGroupHandleSize * hitShaderGroupCount;
+	uint32_t callableShaderGroupCount = m_pipeline->GetCallableShaderGroupCount();
+	CreateShaderBindingTable(SHADER_GROUP_TYPE_CALLABLE, callableShaderGroupCount, shaderHandleBuffer, offset, &m_callableShaderBindingTableBuffer);
+	
 	return true;
 }
 
 void RTShaderBindingTable::Destory()
 {
-	if (m_shaderBindingTableBuffer.IsAllocated())
+	if (m_raygenShaderBindingTableBuffer.IsAllocated())
 	{
-		m_shaderBindingTableBuffer.Destroy();
+		m_raygenShaderBindingTableBuffer.Destroy();
+	}
+
+	if (m_missShaderBindingTableBuffer.IsAllocated())
+	{
+		m_missShaderBindingTableBuffer.Destroy();
+	}
+
+	if (m_hitShaderBindingTableBuffer.IsAllocated())
+	{
+		m_hitShaderBindingTableBuffer.Destroy();
+	}
+
+	if (m_callableShaderBindingTableBuffer.IsAllocated())
+	{
+		m_callableShaderBindingTableBuffer.Destroy();
 	}
 }
 
-VkStridedBufferRegionKHR* RTShaderBindingTable::GetStridedBufferRegion(ERTShaderGroupType groupType)
+VkStridedDeviceAddressRegionKHR* RTShaderBindingTable::GetStridedBufferRegion(ERTShaderGroupType groupType)
 {
 	if (groupType != SHADER_GROUP_TYPE_INVALID && groupType != SHADER_GROUP_TYPE_END)
 	{

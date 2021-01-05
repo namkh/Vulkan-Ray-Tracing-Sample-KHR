@@ -1,6 +1,7 @@
 
 #include "VulkanDeviceResources.h"
 
+#include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_win32.h>
 #include <math.h>
 
@@ -8,6 +9,8 @@
 
 bool VulkanDeviceResources::Initialize(HINSTANCE hAppInstance, HWND hMainWnd, uint32_t width, uint32_t height, bool useRayTracing)
 {
+	vk::Device device;
+
 	m_win32Instance = hAppInstance;
 	m_win32Wnd		= hMainWnd;
 	m_width			= width;
@@ -141,12 +144,6 @@ bool VulkanDeviceResources::InitDevice()
 			{
 				extensionNames.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 			}
-#if _DEBUG
-			/*if (strcmp(VK_EXT_DEBUG_REPORT_EXTENSION_NAME, extensionProperties[i].extensionName) == 0)
-			{
-				extensionNames.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
-			}*/
-#endif
 			if (strcmp(VK_KHR_SURFACE_EXTENSION_NAME, extensionProperties[i].extensionName) == 0)
 			{
 				extensionNames.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
@@ -178,6 +175,13 @@ bool VulkanDeviceResources::InitDevice()
 	instanceCretateInfo.pNext = nullptr;
 	instanceCretateInfo.flags = 0;
 	instanceCretateInfo.pApplicationInfo = &appInfo;
+#if _DEBUG
+	instanceCretateInfo.enabledLayerCount = static_cast<uint32_t>(instanceDebugLayerNames.size());
+	instanceCretateInfo.ppEnabledLayerNames = instanceDebugLayerNames.data();
+#else
+	instanceCretateInfo.enabledLayerCount = 0;
+	instanceCretateInfo.ppEnabledLayerNames = nullptr;
+#endif
 	instanceCretateInfo.enabledExtensionCount = static_cast<uint32_t>(extensionNames.size());
 	instanceCretateInfo.ppEnabledExtensionNames = extensionNames.data();
 
@@ -209,17 +213,23 @@ bool VulkanDeviceResources::InitDevice()
 	/* get device properties */
 	if (m_useRayTracing)
 	{
-		m_physicalDeviceRayTracingProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_KHR;
+		m_physicalDeviceRayTracingPipelineProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+		m_physicalDeviceAccelerationStructureProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR;
+		m_physicalDeviceRayTracingPipelineProperties.pNext = &m_physicalDeviceAccelerationStructureProperties;
+
 		VkPhysicalDeviceProperties2 physicalDeviceProp2 = {};
 		physicalDeviceProp2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-		physicalDeviceProp2.pNext = &m_physicalDeviceRayTracingProperties;
+		physicalDeviceProp2.pNext = &m_physicalDeviceRayTracingPipelineProperties;
 		vkGetPhysicalDeviceProperties2(m_physicalDevices[0], &physicalDeviceProp2);
 		m_physicalDeviceProperty = physicalDeviceProp2.properties;
 
-		m_physicalDeviceRayTracingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR;
+		m_physicalDeviceRayTracingPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+		m_physicalDeviceAccelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+		m_physicalDeviceRayTracingPipelineFeatures.pNext = &m_physicalDeviceAccelerationStructureFeatures;
+
 		VkPhysicalDeviceFeatures2 physicalDeviceFeatures2 = {};
 		physicalDeviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-		physicalDeviceFeatures2.pNext = &m_physicalDeviceRayTracingFeatures;
+		physicalDeviceFeatures2.pNext = &m_physicalDeviceRayTracingPipelineFeatures;
 		vkGetPhysicalDeviceFeatures2(m_physicalDevices[0], &physicalDeviceFeatures2);
 		m_physicalDeviceFeatures = physicalDeviceFeatures2.features;
 	}
@@ -337,9 +347,13 @@ bool VulkanDeviceResources::InitDevice()
 			}
 			if (m_useRayTracing)
 			{
-				if (strcmp(VK_KHR_RAY_TRACING_EXTENSION_NAME, extensionProperties[i].extensionName) == 0)
+				if (strcmp(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME, extensionProperties[i].extensionName) == 0)
 				{
-					extensionNames.push_back(VK_KHR_RAY_TRACING_EXTENSION_NAME);
+					extensionNames.push_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+				}
+				if (strcmp(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME, extensionProperties[i].extensionName) == 0)
+				{
+					extensionNames.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
 				}
 				if (strcmp(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME, extensionProperties[i].extensionName) == 0)
 				{
@@ -368,24 +382,17 @@ bool VulkanDeviceResources::InitDevice()
 			}
 		}
 	}
-
-	m_physicalDeviceRayTracingFeatures.pNext = &physicalDeviceBufferDeviceAddr;
+	
+	m_physicalDeviceAccelerationStructureFeatures.pNext = &physicalDeviceBufferDeviceAddr;
 	physicalDeviceBufferDeviceAddr.pNext = &descriptorIndexingFeature;
 	VkDeviceCreateInfo logicalDeviceCreateInfo = {};
 	logicalDeviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-	logicalDeviceCreateInfo.pNext = &m_physicalDeviceRayTracingFeatures;
+	logicalDeviceCreateInfo.pNext = &m_physicalDeviceRayTracingPipelineFeatures;
 	logicalDeviceCreateInfo.flags = 0;
 	logicalDeviceCreateInfo.queueCreateInfoCount = 1;
 	logicalDeviceCreateInfo.pQueueCreateInfos = &queueCreateInfo;
 	logicalDeviceCreateInfo.enabledLayerCount = 0;
 	logicalDeviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(extensionNames.size());
-#if _DEBUG
-	logicalDeviceCreateInfo.enabledLayerCount = static_cast<uint32_t>(instanceDebugLayerNames.size());
-	logicalDeviceCreateInfo.ppEnabledLayerNames = instanceDebugLayerNames.data();
-#else
-	logicalDeviceCreateInfo.enabledLayerCount = 0;
-	logicalDeviceCreateInfo.ppEnabledLayerNames = nullptr;
-#endif
 	logicalDeviceCreateInfo.ppEnabledExtensionNames = extensionNames.data();
 	logicalDeviceCreateInfo.pEnabledFeatures = &m_physicalDeviceFeatures;
 

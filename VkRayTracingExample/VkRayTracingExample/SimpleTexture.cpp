@@ -92,7 +92,7 @@ bool SimpleTexture2D::Load(const char* filePath)
 	imageCreateInfo.extent.width = static_cast<uint32_t>(m_width);
 	imageCreateInfo.extent.height = static_cast<uint32_t>(m_height);
 	imageCreateInfo.extent.depth = 1;
-	imageCreateInfo.mipLevels = 1;
+	imageCreateInfo.mipLevels = 8;
 	imageCreateInfo.arrayLayers = 1;
 	imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 	imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;

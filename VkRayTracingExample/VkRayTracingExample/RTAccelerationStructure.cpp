@@ -44,37 +44,6 @@ bool BottomLevelAS::Build(VkCommandBuffer commandBuffer, bool update)
 		indexDataDeviceAddress.deviceAddress = GetBufferDeviceAddress(indexBuffer->GetBuffer());
 
 		m_primitiveCount = indexBuffer->GetIndexCount() / 3;
-		VkAccelerationStructureCreateGeometryTypeInfoKHR asCreateGeomTypeInfo = {};
-		asCreateGeomTypeInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_GEOMETRY_TYPE_INFO_KHR;
-		asCreateGeomTypeInfo.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
-		asCreateGeomTypeInfo.maxPrimitiveCount = m_primitiveCount;
-		asCreateGeomTypeInfo.indexType = VK_INDEX_TYPE_UINT32;
-		asCreateGeomTypeInfo.maxVertexCount = vertexBuffer->GetVertexCount();
-		asCreateGeomTypeInfo.vertexFormat = vertexBuffer->GetVertexFormat();
-		asCreateGeomTypeInfo.allowsTransforms = VK_FALSE;
-
-		VkAccelerationStructureCreateInfoKHR asCreateInfo = {};
-		asCreateInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;;
-		asCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-		asCreateInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
-		asCreateInfo.maxGeometryCount = 1;
-		asCreateInfo.pGeometryInfos = &asCreateGeomTypeInfo;
-
-		if (vkCreateAccelerationStructureKHR(gLogicalDevice, &asCreateInfo, nullptr, &m_accelerationStructure) != VkResult::VK_SUCCESS)
-		{
-			REPORT(EReportType::REPORT_TYPE_ERROR, "Blas create failed.");
-			return false;
-		}
-
-		if (!m_asMemory.Initialize(m_accelerationStructure))
-		{
-			return false;
-		}
-
-		if (!m_scratchBuffer.Initialize(m_accelerationStructure))
-		{
-			return false;
-		}
 
 		m_bottomLevelAsGeometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
 		m_bottomLevelAsGeometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
@@ -82,60 +51,93 @@ bool BottomLevelAS::Build(VkCommandBuffer commandBuffer, bool update)
 		m_bottomLevelAsGeometry.geometry.triangles.vertexFormat = vertexBuffer->GetVertexFormat();
 		m_bottomLevelAsGeometry.geometry.triangles.vertexData.deviceAddress = vertexBuffer->GetDeviceAddress();
 		m_bottomLevelAsGeometry.geometry.triangles.vertexStride = vertexBuffer->GetStride();
+		m_bottomLevelAsGeometry.geometry.triangles.maxVertex = vertexBuffer->GetVertexCount();
 		m_bottomLevelAsGeometry.geometry.triangles.indexType = indexBuffer->GetIndexType();
 		m_bottomLevelAsGeometry.geometry.triangles.indexData.deviceAddress = indexBuffer->GetDeviceAddress();
 		m_bottomLevelAsGeometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
+
+		VkAccelerationStructureBuildGeometryInfoKHR asBuildGeomInfo{};
+		asBuildGeomInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+		asBuildGeomInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+		asBuildGeomInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+		asBuildGeomInfo.geometryCount = 1;
+		asBuildGeomInfo.pGeometries = &m_bottomLevelAsGeometry;
+
+		VkAccelerationStructureBuildSizesInfoKHR asBuildSizeInfo{};
+		asBuildSizeInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
+		vkGetAccelerationStructureBuildSizesKHR
+		(
+			gLogicalDevice,
+			VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
+			&asBuildGeomInfo,
+			&m_primitiveCount,
+			&asBuildSizeInfo
+		);
+
+		if (!m_asMemory.Initialize(asBuildSizeInfo.accelerationStructureSize, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT))
+		{
+			return false;
+		}
+
+		VkAccelerationStructureCreateInfoKHR asCreateInfo{};
+		asCreateInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
+		asCreateInfo.buffer = m_asMemory.GetBuffer();
+		asCreateInfo.size = asBuildSizeInfo.accelerationStructureSize;
+		asCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+
+		if (vkCreateAccelerationStructureKHR(gLogicalDevice, &asCreateInfo, nullptr, &m_accelerationStructure) != VkResult::VK_SUCCESS)
+		{
+			REPORT(EReportType::REPORT_TYPE_ERROR, "Blas create failed.");
+			return false;
+		}
+
+		if (!m_scratchBuffer.Initialize(asBuildSizeInfo.buildScratchSize, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT))
+		{
+			return false;
+		}
 	}
 
-	std::vector<VkAccelerationStructureGeometryKHR*> asGeometries = { &m_bottomLevelAsGeometry };
 	VkAccelerationStructureBuildGeometryInfoKHR asBuildGeomInfo = {};
 	asBuildGeomInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
 	asBuildGeomInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
 	asBuildGeomInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
 	if (update)
-	{
-		asBuildGeomInfo.update = VK_TRUE;
+	{	
 		asBuildGeomInfo.srcAccelerationStructure = m_accelerationStructure;
 	}
-	else
-	{
-		asBuildGeomInfo.update = VK_FALSE;
-	}
 	asBuildGeomInfo.dstAccelerationStructure = m_accelerationStructure;
-	asBuildGeomInfo.geometryArrayOfPointers = asGeometries.size() > 1;
-	asBuildGeomInfo.geometryCount = static_cast<uint32_t>(asGeometries.size());
-	asBuildGeomInfo.ppGeometries = asGeometries.data();
+	asBuildGeomInfo.geometryCount = 1;
+	asBuildGeomInfo.pGeometries = &m_bottomLevelAsGeometry;
 	asBuildGeomInfo.scratchData.deviceAddress = m_scratchBuffer.GetDeviceMemoryAddress();
 
-	VkAccelerationStructureBuildOffsetInfoKHR asBuildOffsetInfo = {};
-	asBuildOffsetInfo.primitiveCount = m_primitiveCount;
-	asBuildOffsetInfo.primitiveOffset = 0;
-	asBuildOffsetInfo.firstVertex = 0;
-	asBuildOffsetInfo.transformOffset = 0;
+	VkAccelerationStructureBuildRangeInfoKHR asBuildRangeInfo = {};
+	asBuildRangeInfo.primitiveCount = m_primitiveCount;
+	asBuildRangeInfo.primitiveOffset = 0;
+	asBuildRangeInfo.firstVertex = 0;
+	asBuildRangeInfo.transformOffset = 0;
 
-	std::vector<VkAccelerationStructureBuildOffsetInfoKHR*> asBuildOffsetInfos = { &asBuildOffsetInfo };
+	std::vector<VkAccelerationStructureBuildRangeInfoKHR*> asBuildRangeInfos = { &asBuildRangeInfo };
 
-	if (VulkanDeviceResources::Instance().GetPhysicalDeviceRayTracingFeatures().rayTracingHostAccelerationStructureCommands)
-	{
-		if (vkBuildAccelerationStructureKHR(gLogicalDevice, 1, &asBuildGeomInfo, asBuildOffsetInfos.data()) != VkResult::VK_SUCCESS)
-		{
-			REPORT(EReportType::REPORT_TYPE_ERROR, "Blas build failed.");
-			return false;
-		}
-	}
-	else
-	{
-		vkCmdBuildAccelerationStructureKHR(commandBuffer, 1, &asBuildGeomInfo, asBuildOffsetInfos.data());
+	vkCmdBuildAccelerationStructuresKHR(commandBuffer, 1, &asBuildGeomInfo, asBuildRangeInfos.data());
 
-		VkMemoryBarrier memoryBarrier;
-		memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
-		memoryBarrier.pNext = nullptr;
-		memoryBarrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
-		memoryBarrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
-		vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
-			VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 1, &memoryBarrier,
-			0, nullptr, 0, nullptr);
-	}
+	VkMemoryBarrier memoryBarrier;
+	memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+	memoryBarrier.pNext = nullptr;
+	memoryBarrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+	memoryBarrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+	vkCmdPipelineBarrier
+	(
+		commandBuffer, 
+		VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+		VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 
+		0, 
+		1, 
+		&memoryBarrier,
+		0, 
+		nullptr, 
+		0, 
+		nullptr
+	);
 
 	VkAccelerationStructureDeviceAddressInfoKHR asDeviceAddressInfo = {};
 	asDeviceAddressInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
@@ -300,15 +302,21 @@ void BottomLevelAsGroup::RefreshInstanceBufferDatas()
 
 		if (m_instancesDeviceBuffer.IsAllocated())
 		{
-			m_instancesDeviceBuffer.Reset(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_RAY_TRACING_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-				static_cast<int>(m_asInstances.size()));
+			m_instancesDeviceBuffer.Reset
+			(
+				VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+				static_cast<int>(m_asInstances.size())
+			);
 		}
 		else
 		{
-			m_instancesDeviceBuffer.Initialzie(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_RAY_TRACING_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-				static_cast<int>(m_asInstances.size()));
+			m_instancesDeviceBuffer.Initialzie
+			(
+				VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+				static_cast<int>(m_asInstances.size())
+			);
 		}
 	}
 	m_instancesDeviceBuffer.UpdateResource(m_asInstances.data(), static_cast<int>(m_asInstances.size()));
@@ -318,17 +326,12 @@ void BottomLevelAsGroup::RefreshBlasList(bool update)
 {
 	RefreshInstanceDatas(update);
 
-	m_topLevelAsCreateGeomTypeInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_GEOMETRY_TYPE_INFO_KHR;
-	m_topLevelAsCreateGeomTypeInfo.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
-	m_topLevelAsCreateGeomTypeInfo.maxPrimitiveCount = m_instanceCount;
-	m_topLevelAsCreateGeomTypeInfo.allowsTransforms = VK_TRUE;
-
 	m_asGeometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
 	m_asGeometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
 	m_asGeometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
 	m_asGeometry.geometry.instances.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
 	m_asGeometry.geometry.instances.arrayOfPointers = VK_FALSE;
-	m_asGeometry.geometry.instances.data.deviceAddress = m_instancesDeviceBuffer.GetDeviceAddress();
+	m_asGeometry.geometry.instances.data.deviceAddress = m_instancesDeviceBuffer.GetDeviceMemoryAddress();
 }
 
 void BottomLevelAsGroup::OnMeshAdded(UID uid)
@@ -400,51 +403,10 @@ void BottomLevelAsGroup::Destroy()
 
 bool TopLevelAS::Build(VkCommandBuffer commandBuffer, std::vector<BottomLevelAsGroup*>& bottomLevelAsGroupList, bool updateBuild)
 {
-	std::vector<VkAccelerationStructureCreateGeometryTypeInfoKHR> allTopLevelAsCreateGeomTypeInfos;
-
 	uint32_t instanceCount = 0;
 	for (auto cur : bottomLevelAsGroupList)
 	{
 		instanceCount += cur->GetInstanceCount();
-	}
-
-	if (!updateBuild)
-	{
-		if (m_accelerationStructure != VK_NULL_HANDLE)
-		{
-			vkDestroyAccelerationStructureKHR(gLogicalDevice, m_accelerationStructure, nullptr);
-			m_accelerationStructure = VK_NULL_HANDLE;
-		}
-		VkAccelerationStructureCreateInfoKHR asCreateInfo = {};
-		asCreateInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
-		asCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-		asCreateInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
-		asCreateInfo.maxGeometryCount = 1;
-		asCreateInfo.pGeometryInfos = &bottomLevelAsGroupList[0]->GetTopLevelAsCrerateGeomTypeInfoList();
-
-		if (vkCreateAccelerationStructureKHR(gLogicalDevice, &asCreateInfo, nullptr, &m_accelerationStructure) != VkResult::VK_SUCCESS)
-		{
-			REPORT(EReportType::REPORT_TYPE_ERROR, "tlas create failed.");
-			return false;
-		}
-
-		if (m_asMemory.IsAllocated())
-		{
-			m_asMemory.Destroy();
-		}
-		if (!m_asMemory.Initialize(m_accelerationStructure))
-		{
-			return false;
-		}
-
-		if (m_scratchBuffer.IsAllocated())
-		{
-			m_scratchBuffer.Destroy();
-		}
-		if (!m_scratchBuffer.Initialize(m_accelerationStructure))
-		{
-			return false;
-		}
 	}
 
 	std::vector<VkAccelerationStructureGeometryKHR> asGeomList;
@@ -454,53 +416,103 @@ bool TopLevelAS::Build(VkCommandBuffer commandBuffer, std::vector<BottomLevelAsG
 	}
 	VkAccelerationStructureGeometryKHR* asGeomListPtr = asGeomList.data();
 
+	if (!updateBuild)
+	{
+		if (m_accelerationStructure != VK_NULL_HANDLE)
+		{
+			vkDestroyAccelerationStructureKHR(gLogicalDevice, m_accelerationStructure, nullptr);
+			m_accelerationStructure = VK_NULL_HANDLE;
+		}
+
+		VkAccelerationStructureBuildGeometryInfoKHR asBuildGeomInfo = {};
+		asBuildGeomInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+		asBuildGeomInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+		asBuildGeomInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+		asBuildGeomInfo.geometryCount = static_cast<uint32_t>(asGeomList.size());
+		asBuildGeomInfo.ppGeometries = &asGeomListPtr;
+
+		VkAccelerationStructureBuildSizesInfoKHR asBuildSizeInfo = {};
+		asBuildSizeInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
+		vkGetAccelerationStructureBuildSizesKHR
+		(
+			gLogicalDevice,
+			VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
+			&asBuildGeomInfo,
+			&instanceCount,
+			&asBuildSizeInfo
+		);
+
+		if (m_asMemory.IsAllocated())
+		{
+			m_asMemory.Destroy();
+		}
+		if (!m_asMemory.Initialize(asBuildSizeInfo.accelerationStructureSize, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT))
+		{
+			return false;
+		}
+
+		VkAccelerationStructureCreateInfoKHR asCreateInfo = {};
+		asCreateInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
+		asCreateInfo.buffer = m_asMemory.GetBuffer();
+		asCreateInfo.size = asBuildSizeInfo.accelerationStructureSize;
+		asCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+		
+		if (vkCreateAccelerationStructureKHR(gLogicalDevice, &asCreateInfo, nullptr, &m_accelerationStructure) != VkResult::VK_SUCCESS)
+		{
+			REPORT(EReportType::REPORT_TYPE_ERROR, "tlas create failed.");
+			return false;
+		}
+
+		if (m_scratchBuffer.IsAllocated())
+		{
+			m_scratchBuffer.Destroy();
+		}
+		if (!m_scratchBuffer.Initialize(asBuildSizeInfo.buildScratchSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT))
+		{
+			return false;
+		}
+	}
+
 	VkAccelerationStructureBuildGeometryInfoKHR asBuildGeomInfo = {};
 	asBuildGeomInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
 	asBuildGeomInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
 	asBuildGeomInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
 	if (updateBuild)
 	{
-		asBuildGeomInfo.update = VK_TRUE;
 		asBuildGeomInfo.srcAccelerationStructure = m_accelerationStructure;
 	}
-	else
-	{
-		asBuildGeomInfo.update = VK_FALSE;
-	}
 	asBuildGeomInfo.dstAccelerationStructure = m_accelerationStructure;
-	asBuildGeomInfo.geometryArrayOfPointers = asGeomList.size() > 1;
 	asBuildGeomInfo.geometryCount = static_cast<uint32_t>(asGeomList.size());
 	asBuildGeomInfo.ppGeometries = &asGeomListPtr;
 	asBuildGeomInfo.scratchData.deviceAddress = m_scratchBuffer.GetDeviceMemoryAddress();
 
-	VkAccelerationStructureBuildOffsetInfoKHR asBuildOffsetInfo = {};
-	asBuildOffsetInfo.primitiveCount = instanceCount;
-	asBuildOffsetInfo.primitiveOffset = 0;
-	asBuildOffsetInfo.firstVertex = 0;
-	asBuildOffsetInfo.transformOffset = 0;
-	std::vector<VkAccelerationStructureBuildOffsetInfoKHR*> offsets{ &asBuildOffsetInfo };
+	VkAccelerationStructureBuildRangeInfoKHR asBuildRangeInfo;
+	asBuildRangeInfo.primitiveCount = instanceCount;
+	asBuildRangeInfo.primitiveOffset = 0;
+	asBuildRangeInfo.firstVertex = 0;
+	asBuildRangeInfo.transformOffset = 0;
+	std::vector<VkAccelerationStructureBuildRangeInfoKHR*> asBuildRangeInfos = { &asBuildRangeInfo };
 
-	if (VulkanDeviceResources::Instance().GetPhysicalDeviceRayTracingFeatures().rayTracingHostAccelerationStructureCommands)
-	{
-		if (vkBuildAccelerationStructureKHR(gLogicalDevice, 1, &asBuildGeomInfo, offsets.data()) != VkResult::VK_SUCCESS)
-		{
-			REPORT(EReportType::REPORT_TYPE_ERROR, "Tlas build failed.");
-			return false;
-		}
-	}
-	else
-	{
-		vkCmdBuildAccelerationStructureKHR(commandBuffer, 1, &asBuildGeomInfo, offsets.data());
-		VkMemoryBarrier memoryBarrier;
-		memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
-		memoryBarrier.pNext = nullptr;
-		memoryBarrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
-		memoryBarrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
-		vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
-			VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, 0, 1, &memoryBarrier,
-			0, nullptr, 0, nullptr);
-	}
-
+	
+	vkCmdBuildAccelerationStructuresKHR(commandBuffer, 1, &asBuildGeomInfo, asBuildRangeInfos.data());
+	VkMemoryBarrier memoryBarrier;
+	memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+	memoryBarrier.pNext = nullptr;
+	memoryBarrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+	memoryBarrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+	vkCmdPipelineBarrier
+	(
+		commandBuffer, 
+		VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+		VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+		0,
+		1,
+		&memoryBarrier,
+		0,
+		nullptr,
+		0,
+		nullptr
+	);
 	m_isBuilded = true;
 
 	return true;

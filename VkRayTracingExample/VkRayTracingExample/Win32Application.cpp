@@ -104,6 +104,13 @@ int Win32Application::Run(ExampleAppBase* pExample, HINSTANCE hInstance, int nCm
             GlobalTimer::Instance().Tick();
 			if (!g_appPause)
 			{
+				float deltaTime = GlobalTimer::Instance().GetDeltaTime();
+				float fps = 1.0f / deltaTime;
+				static wchar_t titleBuffer[1024];
+				memset(titleBuffer, 0, sizeof(wchar_t) * 1024);
+				_stprintf_s(titleBuffer, L"%s [FPS : %0.1f]", pExample->GetAppName().c_str(), fps);
+				SetWindowText(m_hwnd, titleBuffer);
+
 				gVkDeviceRes.RestoreDeviceIfDirtied();
 				pExample->Update(GlobalTimer::Instance().GetDeltaTime());
 				pExample->PreRender();

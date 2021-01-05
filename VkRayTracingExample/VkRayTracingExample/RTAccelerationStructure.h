@@ -22,10 +22,10 @@ public:
 	VkDeviceAddress GetAsHandle() { return m_handle; }
 
 protected:
-	VkAccelerationStructureKHR				m_accelerationStructure = VK_NULL_HANDLE;
-	RayTracingScratchBuffer					m_scratchBuffer;
-	RayTracingAccelerationStructureMemory	m_asMemory;
-	VkTransformMatrixKHR					m_transformMatrix = {};
+	VkAccelerationStructureKHR	m_accelerationStructure = VK_NULL_HANDLE;
+	VkTransformMatrixKHR		m_transformMatrix = {};
+	RayTracingScratchBuffer		m_scratchBuffer;
+	BufferData					m_asMemory;
 
 	VkDeviceAddress m_handle = 0;
 	bool m_isBuilded = false;
@@ -57,7 +57,7 @@ protected:
 
 	SimpleMeshData* m_sourceMesh = nullptr;
 	VkAccelerationStructureGeometryKHR m_bottomLevelAsGeometry = {};
-	int m_primitiveCount = 0;
+	uint32_t m_primitiveCount = 0;
 	EBlasBuildState m_buildState = EBlasBuildState::NEED_BUILD;
 };
 
@@ -79,7 +79,6 @@ protected:
 public:
 	VkAccelerationStructureGeometryKHR& GetVkAccelerationStructureGeometryKHR() { return m_asGeometry; }
 	StructuredBufferData<VkAccelerationStructureInstanceKHR>& GetAsInstancesDeviceBuffer() { return m_instancesDeviceBuffer; }
-	VkAccelerationStructureCreateGeometryTypeInfoKHR& GetTopLevelAsCrerateGeomTypeInfoList() { return m_topLevelAsCreateGeomTypeInfo; }
 
 	int GetInstanceCount()			{ return m_instanceCount; }
 	bool IsBuilded()				{ return m_isBuilded; }
@@ -104,9 +103,9 @@ public:
 private:
 	std::vector<BottomLevelAS*> m_blasList;
 	
-	VkAccelerationStructureCreateGeometryTypeInfoKHR m_topLevelAsCreateGeomTypeInfo = {};
+//	VkAccelerationStructureCreateGeometryTypeInfoKHR m_topLevelAsCreateGeomTypeInfo = {};
 	std::vector<VkAccelerationStructureInstanceKHR> m_asInstances;
-	RtBufferData<VkAccelerationStructureInstanceKHR> m_instancesDeviceBuffer = {};
+	StructuredBufferData<VkAccelerationStructureInstanceKHR> m_instancesDeviceBuffer = {};
 	VkAccelerationStructureGeometryKHR m_asGeometry = {};
 
 	uint32_t m_instanceCount = -1;
