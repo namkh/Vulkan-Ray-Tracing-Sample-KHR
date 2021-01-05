@@ -2,21 +2,21 @@
 
 SimpleRenderObject* RenderObjectContainer::CreateRenderObject(std::string fbxFilePath, ExampleMaterialType exampleMaterialType)
 {
-	SimpleRenderObject* obj = Create<SimpleRenderObject, std::map<UID, uint32_t>, std::vector<SimpleRenderObject*> >(&m_objIndexTable, &m_renderObjList);
+	SimpleRenderObject* obj = Create<SimpleRenderObject, std::unordered_map<UID, SimpleRenderObject*> >(&m_renderObjList);
 	obj->Initialize(fbxFilePath, exampleMaterialType);
 	return obj;
 }
 
 void RenderObjectContainer::RemoveRenderObject(SimpleRenderObject* obj)
 {
-	Remove(obj, &m_objIndexTable, &m_renderObjList);
+	Remove(obj, &m_renderObjList);
 }
 
 SampleRenderObjectInstance* RenderObjectContainer::CreateRenderObjectInstance(glm::mat4& matWorld)
 {
-	SampleRenderObjectInstance* inst = Create<SampleRenderObjectInstance, std::map<UID, uint32_t>, std::vector<SampleRenderObjectInstance*> >(&m_instIndexTable, &m_instList);
+	SampleRenderObjectInstance* inst = Create<SampleRenderObjectInstance, std::unordered_map<UID, SampleRenderObjectInstance*> >(&m_instList);
 	inst->Initialzie(matWorld);
-	
+
 	OnInstPerMeshAdded.Exec(static_cast<uint32_t>(m_instPerMeshList.size() - 1));
 
 	return inst;
@@ -24,17 +24,14 @@ SampleRenderObjectInstance* RenderObjectContainer::CreateRenderObjectInstance(gl
 
 void RenderObjectContainer::RemoveRenderObjectInstance(SampleRenderObjectInstance* instance)
 {
-	Remove(instance, &m_instIndexTable, &m_instList);
-
-	RefreshTable(&m_instIndexTable, &m_instList);
-	RefreshTable(&m_instPerMeshIndexTable, &m_instPerMeshList);
+	Remove(instance, &m_instList);
 }
 
 SampleRenderObjectInstancePerMesh* RenderObjectContainer::CreateRenderObjectInstancePerMesh(SampleRenderObjectInstance* parentInst, SimpleMeshData* meshData, SimpleMaterial* material)
 {
-	SampleRenderObjectInstancePerMesh* instPerMesh = Create<SampleRenderObjectInstancePerMesh, std::map<UID, uint32_t>, std::vector<SampleRenderObjectInstancePerMesh*> >(&m_instPerMeshIndexTable, &m_instPerMeshList);
+	SampleRenderObjectInstancePerMesh* instPerMesh = Create<SampleRenderObjectInstancePerMesh, std::unordered_map<UID, SampleRenderObjectInstancePerMesh*> >(&m_instPerMeshList);
 	instPerMesh->Initialize(parentInst, meshData, material);
-	
+
 	OnInstPerMeshAdded.Exec();
 
 	return instPerMesh;
@@ -45,12 +42,9 @@ void RenderObjectContainer::RemoveRenderObjectInstancePerMesh(SampleRenderObject
 	int removeIndex = GetRenderObjectInstancePerMeshBindIndex(instancePreMesh);
 	if (removeIndex != -1)
 	{
-		Remove(instancePreMesh, &m_instPerMeshIndexTable, &m_instPerMeshList);
+		Remove(instancePreMesh, &m_instPerMeshList);
 
 		OnInstPerMeshRemoved.Exec(static_cast<uint32_t>(removeIndex));
-
-		RefreshTable(&m_instIndexTable, &m_instList);
-		RefreshTable(&m_instPerMeshIndexTable, &m_instPerMeshList);
 	}
 }
 
@@ -58,17 +52,14 @@ void RenderObjectContainer::Clear()
 {
 	for (auto& cur : m_renderObjList)
 	{
-		if (cur != nullptr)
+		if (cur.second != nullptr)
 		{
-			cur->Destroy();
-			delete cur;
+			cur.second->Destroy();
+			delete cur.second;
 		}
 	}
 	m_renderObjList.clear();
-	m_renderObjList.clear();
-	m_instIndexTable.clear();
 	m_instList.clear();
-	m_instPerMeshIndexTable.clear();
 	m_instPerMeshList.clear();
 }
 
@@ -81,22 +72,24 @@ SimpleRenderObject* RenderObjectContainer::GetRenderObject(uint32_t index)
 {
 	if (index < m_renderObjList.size())
 	{
-		return m_renderObjList[index];
+		auto pos = m_renderObjList.begin();
+		std::advance(pos, index);
+		return pos->second;
 	}
 	return nullptr;
 }
 
-int RenderObjectContainer::GetRenderObjectBindIndex(SimpleRenderObject* instPerMesh)
+int RenderObjectContainer::GetRenderObjectBindIndex(SimpleRenderObject* renderObj)
 {
-	if (instPerMesh != nullptr)
+	if (renderObj != nullptr)
 	{
-		auto iterFind = m_instIndexTable.find(instPerMesh->GetUID());
-		if (iterFind != m_instIndexTable.end())
+		auto iterFind = m_instList.find(renderObj->GetUID());
+		if (iterFind != m_instList.end())
 		{
-			return iterFind->second;
+			return static_cast<int>(std::distance(m_instList.begin(), iterFind));
 		}
 	}
-	return -1;
+	return INVALID_INDEX_INT;
 }
 
 uint32_t RenderObjectContainer::GetRenderObjectInstanceCount()
@@ -108,7 +101,9 @@ SampleRenderObjectInstance* RenderObjectContainer::GetRenderObjectInstance(uint3
 {
 	if (index < m_instList.size())
 	{
-		return m_instList[index];
+		auto pos = m_instList.begin();
+		std::advance(pos, index);
+		return pos->second;
 	}
 	return nullptr;
 }
@@ -117,21 +112,24 @@ int RenderObjectContainer::GetRenderObjectInstanceBindIndex(SampleRenderObjectIn
 {
 	if (inst != nullptr)
 	{
-		auto iterFind = m_instIndexTable.find(inst->GetUID());
-		if (iterFind != m_instIndexTable.end())
+		auto iterFind = m_instList.find(inst->GetUID());
+		if (iterFind != m_instList.end())
 		{
-			return iterFind->second;
+			return static_cast<int>(std::distance(m_instList.begin(), iterFind));
 		}
 	}
-	return -1;
+	return INVALID_INDEX_INT;
 }
 
 int RenderObjectContainer::GetRenderObjectInstancePerMeshBindIndex(SampleRenderObjectInstancePerMesh* instPerMesh)
 {
-	auto iterFind = m_instPerMeshIndexTable.find(instPerMesh->GetUID());
-	if (iterFind != m_instPerMeshIndexTable.end())
+	if (instPerMesh != nullptr)
 	{
-		return iterFind->second;
+		auto iterFind = m_instPerMeshList.find(instPerMesh->GetUID());
+		if (iterFind != m_instPerMeshList.end())
+		{
+			return static_cast<int>(std::distance(m_instPerMeshList.begin(), iterFind));
+		}
 	}
 	return INVALID_INDEX_INT;
 }
@@ -145,7 +143,9 @@ SampleRenderObjectInstancePerMesh* RenderObjectContainer::GetRenderObjectInstanc
 {
 	if (index < m_instPerMeshList.size())
 	{
-		return m_instPerMeshList[index];
+		auto pos = m_instPerMeshList.begin();
+		std::advance(pos, index);
+		return pos->second;
 	}
 	return nullptr;
 }

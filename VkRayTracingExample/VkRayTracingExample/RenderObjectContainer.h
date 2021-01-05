@@ -8,9 +8,6 @@ class RenderObjectContainer : public TSingleton<RenderObjectContainer>
 public:
 	RenderObjectContainer(token) 
 	{
-		m_renderObjList.reserve(RESOURCE_CONTAINER_INITIAL_SIZE);
-		m_instList.reserve(RESOURCE_CONTAINER_INITIAL_SIZE);
-		m_instPerMeshList.reserve(RESOURCE_CONTAINER_INITIAL_SIZE);
 	};
 
 public:
@@ -29,7 +26,7 @@ public:
 
 	uint32_t GetRenderObjectCount();
 	SimpleRenderObject* GetRenderObject(uint32_t index);
-	int GetRenderObjectBindIndex(SimpleRenderObject* instPerMesh);
+	int GetRenderObjectBindIndex(SimpleRenderObject* renderObj);
 
 	uint32_t GetRenderObjectInstanceCount();
 	SampleRenderObjectInstance* GetRenderObjectInstance(uint32_t index);
@@ -47,64 +44,42 @@ public:
 
 protected:
 
-	template <typename CreateItemType, typename IndexListType, typename ItemListType>
-	CreateItemType* Create(IndexListType* idxList, ItemListType* itemList);
+	template <typename CreateItemType, typename ListType>
+	CreateItemType* Create(ListType* itemList);
 
-	template <typename RemoveItemType, typename IndexListType, typename ItemListType>
-	void Remove(RemoveItemType* item, IndexListType* idxList, ItemListType* itemList);
-
-	template <typename IndexListType, typename ItemListType>
-	void RefreshTable(IndexListType* idxList, ItemListType* itemList);
+	template <typename RemoveItemType, typename ListType>
+	void Remove(RemoveItemType* item, ListType* itemList);
 
 private:
 
-	std::map<UID, uint32_t> m_objIndexTable;
-	std::vector<SimpleRenderObject*> m_renderObjList;
-
-	std::map<UID, uint32_t> m_instIndexTable;
-	std::vector<SampleRenderObjectInstance*> m_instList;
-
-	std::map<UID, uint32_t> m_instPerMeshIndexTable;
-	std::vector<SampleRenderObjectInstancePerMesh*> m_instPerMeshList;
+	std::unordered_map<UID, SimpleRenderObject*> m_renderObjList;
+	std::unordered_map<UID, SampleRenderObjectInstance*> m_instList;
+	std::unordered_map<UID, SampleRenderObjectInstancePerMesh*> m_instPerMeshList;
 
 	bool m_isDirty = false;
 };
 
-template <typename CreateItemType, typename IndexListType, typename ItemListType>
-CreateItemType* RenderObjectContainer::Create(IndexListType* idxList, ItemListType* itemList)
+template <typename CreateItemType, typename ListType>
+CreateItemType* RenderObjectContainer::Create(ListType* itemList)
 {
 	CreateItemType* item = new CreateItemType();
-	itemList->push_back(item);
-	uint32_t index = static_cast<uint32_t>(itemList->size() - 1);
-	idxList->insert(std::make_pair(item->GetUID(), index));
+	itemList->insert(std::make_pair(item->GetUID(), item));
 	m_isDirty = true;
 	return item;
 }
 
-template <typename RemoveItemType, typename IndexListType, typename ItemListType>
-void RenderObjectContainer::Remove(RemoveItemType* item, IndexListType* idxList, ItemListType* itemList)
+template <typename RemoveItemType, typename ListType>
+void RenderObjectContainer::Remove(RemoveItemType* item, ListType* itemList)
 {
-	auto iterIdxFind = idxList->find(item->GetUID());
-	if (iterIdxFind != idxList->end())
+	auto iterIdxFind = itemList->find(item->GetUID());
+	if (iterIdxFind != itemList->end())
 	{
-		uint32_t index = static_cast<uint32_t>(iterIdxFind->second);
-		idxList->erase(iterIdxFind);
-		(*itemList)[index]->Destroy();
-		delete (*itemList)[index];
-		itemList->erase(itemList->begin() + index);
-		m_isDirty = true;
-	}
-}
-
-template <typename IndexListType, typename ItemListType>
-void RenderObjectContainer::RefreshTable(IndexListType* idxList, ItemListType* itemList)
-{
-	for (uint32_t i = 0; i < itemList->size(); i++)
-	{
-		auto iterFind = idxList->find((*itemList)[i]->GetUID());
-		if (iterFind != idxList->end())
+		if (iterIdxFind->second != nullptr)
 		{
-			iterFind->second = i;
+			iterIdxFind->second->Destroy();
+			delete iterIdxFind->second;
+			itemList->erase(iterIdxFind);
+			m_isDirty = true;
 		}
 	}
 }

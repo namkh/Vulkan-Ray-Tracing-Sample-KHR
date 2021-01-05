@@ -3,20 +3,20 @@
 SimpleTexture2D* TextureContainer::CreateTexture(const char* filePath)
 {
 	SimpleTexture2D* texture = nullptr;
-
-	auto iterKeyFinded = m_keyTable.find(filePath);
+	std::string strFilePath = filePath;
+	auto iterKeyFinded = m_keyTable.find(strFilePath);
 	if (iterKeyFinded != m_keyTable.end())
 	{
-		auto iterIndexFinded = m_indexTable.find(iterKeyFinded->second);
-		if (iterIndexFinded != m_indexTable.end() && iterIndexFinded->second < m_textureList.size())
+		auto iterFind = m_textureDatas.find(iterKeyFinded->second);
+		if (iterFind != m_textureDatas.end())
 		{
-			texture = m_textureList[iterIndexFinded->second];
+			texture = iterFind->second;
 		}
 	}
 
 	if (texture == nullptr)
 	{
-		texture = LoadTexture(filePath);
+		texture = LoadTexture(strFilePath.c_str());
 	}
 
 	if (texture != nullptr)
@@ -29,22 +29,33 @@ SimpleTexture2D* TextureContainer::CreateTexture(const char* filePath)
 
 int TextureContainer::GetBindIndex(SimpleTexture2D* texture)
 {
-	auto iterFind = m_indexTable.find(texture->GetUID());
-	if (iterFind != m_indexTable.end())
+	auto iterFind = m_textureDatas.find(texture->GetUID());
+	if (iterFind != m_textureDatas.end())
 	{
-		return iterFind->second;
+		return static_cast<int>(std::distance(m_textureDatas.begin(), iterFind));
 	}
 	return INVALID_INDEX_INT;
+}
+
+SimpleTexture2D* TextureContainer::GetTexture(uint32_t  index)
+{
+	if (index < m_textureDatas.size())
+	{
+		auto pos = m_textureDatas.begin();
+		std::advance(pos, index);
+		return pos->second;
+	}
+	return nullptr;
 }
 
 void TextureContainer::RemoveUnusedTextrures()
 {
 	std::vector<SimpleTexture2D*> m_removeList;
-	for (auto& cur : m_textureList)
+	for (auto& cur : m_textureDatas)
 	{
-		if (cur->GetRefCount() == 0)
+		if (cur.second->GetRefCount() == 0)
 		{
-			m_removeList.push_back(cur);
+			m_removeList.push_back(cur.second);
 		}
 	}
 
@@ -57,63 +68,48 @@ void TextureContainer::RemoveUnusedTextrures()
 SimpleTexture2D* TextureContainer::LoadTexture(const char* filePath)
 {
 	SimpleTexture2D* texture = new SimpleTexture2D();
-	m_textureList.push_back(texture);
 
 	if (!texture->Load(filePath))
 	{
 		return nullptr;
 	}
-
 	UID uid = texture->GetUID();
-	m_keyTable.insert(std::make_pair(filePath, uid));
-	m_indexTable.insert(std::make_pair(uid, static_cast<uint32_t>(m_textureList.size() - 1)));
+	m_textureDatas.insert(std::make_pair(uid, texture));
+	m_keyTable.insert(std::make_pair(std::string(filePath), uid));
 
 	return texture;
 }
 
 void TextureContainer::UnloadTexture(SimpleTexture2D* texture)
 {
-	UID indexTableUid = texture->GetUID();
-	auto iterIdxFind = m_indexTable.find(indexTableUid);
-	if (iterIdxFind != m_indexTable.end())
+	UID uid = texture->GetUID();
+	auto iterFind = m_textureDatas.find(uid);
+	if (iterFind != m_textureDatas.end())
 	{
-		uint32_t index = iterIdxFind->second;
-		if (index < m_textureList.size() && m_textureList[index]->GetRefCount() == 0)
+		if (iterFind->second != nullptr)
 		{
-			m_keyTable.erase(m_textureList[iterIdxFind->second]->GetSrcFilePath());
-			m_indexTable.erase(indexTableUid);
-			m_textureList[index]->Unload();
-			delete m_textureList[index];
-			m_textureList.erase(m_textureList.begin() + index);
+			m_keyTable.erase(iterFind->second->GetSrcFilePath());
+			iterFind->second->Unload();
+			delete iterFind->second;
+			m_textureDatas.erase(iterFind);
 		}
 	}
 }
 
 void TextureContainer::Clear()
 {
-	for (auto& cur : m_textureList)
+	for (auto& cur : m_textureDatas)
 	{
-		if (cur != nullptr && cur->GetRefCount() == 0)
+		if (cur.second != nullptr && cur.second->GetRefCount() == 0)
 		{
-			cur->Unload();
-			delete cur;
+			cur.second->Unload();
+			delete cur.second;
 		}
 		else
 		{
 			continue;
 		}
 	}
-}
-
-void TextureContainer::RefreshIndexTable()
-{
-	auto iterFind = m_indexTable.end();
-	for (int i = 0; i < m_textureList.size(); i++)
-	{
-		iterFind = m_indexTable.find(m_textureList[i]->GetUID());
-		if (iterFind != m_indexTable.end())
-		{
-			iterFind->second = i;
-		}
-	}
+	m_textureDatas.clear();
+	m_keyTable.clear();
 }

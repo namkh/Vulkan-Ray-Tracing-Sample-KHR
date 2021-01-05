@@ -8,7 +8,6 @@ class MaterialContainer : public TSingleton<MaterialContainer>
 public:
 	MaterialContainer(token) 
 	{
-		m_materialList.reserve(RESOURCE_CONTAINER_INITIAL_SIZE);
 	};
 
 public:
@@ -18,15 +17,12 @@ public:
 
 	void Clear();
 
-	uint32_t GetMaterialCount() { return static_cast<uint32_t>(m_materialList.size()); }
+	uint32_t GetMaterialCount() { return static_cast<uint32_t>(m_materialDatas.size()); }
 	SimpleMaterial* GetMaterial(int index);
 
-protected:
-	void RefreshIndexTable();
-
 private:
-	std::map<UID, uint32_t> m_materialIndexTable;
-	std::vector<SimpleMaterial*> m_materialList;
+	std::map<ExampleMaterialType, UID> m_materialUidTable;
+	std::map<UID, SimpleMaterial*> m_materialDatas;
 };
 
 #define gMaterialContainer MaterialContainer::Instance()

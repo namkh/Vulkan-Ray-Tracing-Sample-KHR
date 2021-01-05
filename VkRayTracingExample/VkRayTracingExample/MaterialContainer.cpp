@@ -4,76 +4,79 @@
 
 SimpleMaterial* MaterialContainer::CreateMaterial(ExampleMaterialType matType)
 {
-	SimpleMaterial* material = new SimpleMaterial();
-	m_materialList.push_back(material);
+	SimpleMaterial* material = nullptr;
 
-	ExampleMaterialCreateCode::Instance().CreateExampleMaterial(matType, material);
-	UID uid = material->GetUID();
-	m_materialIndexTable.insert(std::make_pair(uid, static_cast<uint32_t>(m_materialList.size() - 1)));
+	auto iterUidFind = m_materialUidTable.find(matType);
+	if (iterUidFind != m_materialUidTable.end())
+	{
+		auto iterFind = m_materialDatas.find(iterUidFind->second);
+		if (iterFind != m_materialDatas.end())
+		{
+			material = iterFind->second;
+		}
+	}
+
+	if (material == nullptr)
+	{
+		material = new SimpleMaterial();
+		UID uid = material->GetUID();
+		ExampleMaterialCreateCode::Instance().CreateExampleMaterial(matType, material);
+		m_materialDatas.insert(std::make_pair(uid, material));
+		m_materialUidTable.insert(std::make_pair(matType, uid));
+	}
 
 	return material;
 }
 
 void MaterialContainer::RemoveMaterial(SimpleMaterial* material)
 {
-	auto iterIdxFind = m_materialIndexTable.find(material->GetUID());
-	if (iterIdxFind != m_materialIndexTable.end())
+	auto iterFind = m_materialDatas.find(material->GetUID());
+	if (iterFind != m_materialDatas.end())
 	{
-		int findIndex = iterIdxFind->second;
-		m_materialIndexTable.erase(iterIdxFind);
-		m_materialList[findIndex]->Destory();
-		delete m_materialList[findIndex];
-		m_materialList.erase(m_materialList.begin() + findIndex);
-
-		RefreshIndexTable();
+		if (iterFind->second != nullptr)
+		{
+			m_materialUidTable.erase(iterFind->second->m_materialType);
+			iterFind->second->Destory();
+			delete iterFind->second;
+		}
+		m_materialDatas.erase(iterFind);
 	}
 }
 
 int MaterialContainer::GetBindIndex(SimpleMaterial* material)
 {
-	auto iterFind = m_materialIndexTable.find(material->GetUID());
-	if (iterFind != m_materialIndexTable.end())
+	auto iterFind = m_materialDatas.find(material->GetUID());
+	if (iterFind != m_materialDatas.end())
 	{
-		return iterFind->second;
+		return static_cast<int>(std::distance(m_materialDatas.begin(), iterFind));
 	}
 	return INVALID_INDEX_INT;
 }
 
 void MaterialContainer::Clear()
 {
-	for (auto& cur : m_materialList)
+	for (auto& cur : m_materialDatas)
 	{
-		if (cur != nullptr)
+		if (cur.second != nullptr)
 		{
-			cur->Destory();
+			cur.second->Destory();
 		}
-		delete cur;
+		delete cur.second;
 	}
 
-	m_materialList.clear();
-	m_materialIndexTable.clear();
+	m_materialDatas.clear();
+	m_materialUidTable.clear();
 }
 
 SimpleMaterial* MaterialContainer::GetMaterial(int index)
 {
-	if (index < m_materialList.size())
+	if (index < m_materialDatas.size())
 	{
-		return m_materialList[index];
+		auto pos = m_materialDatas.begin();
+		std::advance(pos, index);
+		return pos->second;
 	}
 	return nullptr;
-}
-
-void MaterialContainer::RefreshIndexTable()
-{
-	auto iterFind = m_materialIndexTable.end();
-	for (int i = 0; i < m_materialList.size(); i++)
-	{
-		iterFind = m_materialIndexTable.find(m_materialList[i]->GetUID());
-		if (iterFind != m_materialIndexTable.end())
-		{
-			iterFind->second = i;
-		}
-	}
 }
 
 //머트리얼 하드코딩 작성

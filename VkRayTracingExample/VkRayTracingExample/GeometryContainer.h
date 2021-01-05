@@ -1,6 +1,6 @@
 #pragma once
 
-#include <map>
+#include <unordered_map>
 #include <functional>
 
 #include "DeviceBuffers.h"
@@ -14,8 +14,6 @@ friend class SimpleGeometry;
 public:
 	GeometryContainer(token) 
 	{
-		m_meshDatas.reserve(RESOURCE_CONTAINER_INITIAL_SIZE);
-		m_geomDatas.reserve(RESOURCE_CONTAINER_INITIAL_SIZE);
 	};
 	
 public:
@@ -43,8 +41,6 @@ protected:
 	SimpleMeshData* LoadMesh(FbxGeometryData& fbxGeomData);
 	void UnloadMesh(SimpleMeshData* geomData);
 
-	void RefreshIndexTable();
-
 public:
 
 	LambdaCommandListWithOneParam<std::function<void(uint32_t)>, uint32_t> OnMeshLoaded;
@@ -52,11 +48,8 @@ public:
 	
 private:
 	std::map<std::string, UID> m_geomKeyTable;
-	std::map<UID, uint32_t> m_geomIndexTable;
-	std::vector<SimpleGeometry*> m_geomDatas;
-
-	std::map<UID, uint32_t> m_meshIndexTable;
-	std::vector<SimpleMeshData*> m_meshDatas;
+	std::unordered_map<UID, SimpleGeometry*> m_geomDatas;
+	std::unordered_map<UID, SimpleMeshData*> m_meshDatas;
 };
 
 #define gGeomContainer GeometryContainer::Instance()

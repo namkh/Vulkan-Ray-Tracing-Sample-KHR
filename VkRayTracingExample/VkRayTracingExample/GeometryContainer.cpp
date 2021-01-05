@@ -9,13 +9,10 @@ SimpleGeometry* GeometryContainer::CreateGeometry(std::string& fbxFilePath)
 	auto iterKeyFinded = m_geomKeyTable.find(fbxFilePath);
 	if(iterKeyFinded != m_geomKeyTable.end())
 	{
-		auto iterIdxFinded = m_geomIndexTable.find(iterKeyFinded->second);
-		if (iterIdxFinded != m_geomIndexTable.end())
+		auto iterGeomFinded = m_geomDatas.find(iterKeyFinded->second);
+		if (iterGeomFinded != m_geomDatas.end())
 		{
-			if (iterIdxFinded->second < m_geomDatas.size())
-			{
-				geomData = m_geomDatas[iterIdxFinded->second];
-			}
+			geomData = iterGeomFinded->second;
 		}
 	}
 
@@ -44,10 +41,10 @@ int GeometryContainer::GetMeshBindIndex(SimpleMeshData* meshData)
 
 int GeometryContainer::GetMeshBindIndexFromUID(UID uid)
 {
-	auto iterFind = m_meshIndexTable.find(uid);
-	if (iterFind != m_meshIndexTable.end())
+	auto iterFind = m_meshDatas.find(uid);
+	if (iterFind != m_meshDatas.end())
 	{
-		return iterFind->second;
+		return static_cast<int>(std::distance(m_meshDatas.begin(), iterFind));
 	}
 	return INVALID_INDEX_INT;
 }
@@ -57,9 +54,9 @@ void GeometryContainer::RemoveUnusedGeometries()
 	std::vector<SimpleGeometry*> m_removeList;
 	for (auto& cur : m_geomDatas)
 	{
-		if (cur->GetRefCount() == 0)
-		{	
-			m_removeList.push_back(cur);
+		if (cur.second->GetRefCount() == 0)
+		{
+			m_removeList.push_back(cur.second);
 		}
 	}
 
@@ -73,21 +70,25 @@ void GeometryContainer::Clear()
 {
 	for (auto& cur : m_geomDatas)
 	{
-		if (cur->GetRefCount() == 0)
+		if (cur.second->GetRefCount() == 0)
 		{
-			cur->Unload();
-			delete cur;
+			if (cur.second != nullptr)
+			{
+				cur.second->Unload();
+				delete cur.second;
+			}
 		}
 	}
 	m_geomDatas.clear();
-	m_geomIndexTable.clear();
 }
 
 SimpleGeometry* GeometryContainer::GetGeometry(uint32_t index)
 {
 	if (index < m_geomDatas.size())
 	{
-		return m_geomDatas[index];
+		auto pos = m_geomDatas.begin();
+		std::advance(pos, index);
+		return pos->second;
 	}
 	return nullptr;
 }
@@ -96,17 +97,19 @@ SimpleMeshData* GeometryContainer::GetMesh(uint32_t index)
 {
 	if (index < m_meshDatas.size())
 	{
-		return m_meshDatas[index];
+		auto pos = m_meshDatas.begin();
+		std::advance(pos, index);
+		return pos->second;
 	}
 	return nullptr;
 }
 
 SimpleMeshData* GeometryContainer::GetMeshFromUID(UID uid)
 {
-	int index = GetMeshBindIndexFromUID(uid);
-	if (index != INVALID_INDEX_INT)
+	auto iterFind = m_meshDatas.find(uid);
+	if (iterFind != m_meshDatas.end())
 	{
-		return m_meshDatas[index];
+		return iterFind->second;
 	}
 	return nullptr;
 }
@@ -114,85 +117,51 @@ SimpleMeshData* GeometryContainer::GetMeshFromUID(UID uid)
 SimpleGeometry* GeometryContainer::LoadGeometry(std::string& filePath)
 {
 	SimpleGeometry* geometry = new SimpleGeometry();
-	m_geomDatas.push_back(geometry);
-	uint32_t addedIndex = static_cast<uint32_t>(m_geomDatas.size() - 1);
-	UID uid = geometry->GetUID();
 	geometry->Load(filePath);
+	UID uid = geometry->GetUID();
+	m_geomDatas.insert(std::make_pair(uid, geometry));
 	m_geomKeyTable.insert(std::make_pair(filePath, uid));
-	m_geomIndexTable.insert(std::make_pair(uid, addedIndex));
-	
 	return geometry;
 }
 
 void GeometryContainer::UnloadGeometry(SimpleGeometry* geomData)
 {
 	m_geomKeyTable.erase(geomData->GetSrcFilePath());
-	auto iterIdxFind = m_geomIndexTable.find(geomData->GetUID());
-	if (iterIdxFind != m_geomIndexTable.end())
+	auto iterFind = m_geomDatas.find(geomData->GetUID());
+	if (iterFind != m_geomDatas.end())
 	{
-		if (iterIdxFind->second < m_geomDatas.size())
+		if (iterFind->second != nullptr)
 		{
-			int geomIndex = iterIdxFind->second;
-			m_geomIndexTable.erase(iterIdxFind);
-
-			m_geomDatas[geomIndex]->Unload();
-			delete m_geomDatas[geomIndex];
-
-			m_geomDatas.erase(m_geomDatas.begin() + geomIndex);
-
-			RefreshIndexTable();
+			iterFind->second->Unload();
+			delete iterFind->second;
 		}
+		m_geomDatas.erase(iterFind);
 	}
 }
 
 SimpleMeshData* GeometryContainer::LoadMesh(FbxGeometryData& fbxGeomData)
 {
 	SimpleMeshData* meshData = new SimpleMeshData();
-	m_meshDatas.push_back(meshData);
-	int addedIndex = static_cast<uint32_t>(m_meshDatas.size() - 1);
 	meshData->Load(fbxGeomData);
-	m_meshIndexTable.insert(std::make_pair(meshData->GetUID(), static_cast<uint32_t>(addedIndex)));
+	m_meshDatas.insert(std::make_pair(meshData->GetUID(), meshData));
 
-	OnMeshLoaded.Exec(addedIndex);
+	OnMeshLoaded.Exec(GetMeshBindIndex(meshData));
 
 	return meshData;
 }
 
 void GeometryContainer::UnloadMesh(SimpleMeshData* geomData)
 {
-	auto iterIdxFind = m_meshIndexTable.find(geomData->GetUID());
-	if (iterIdxFind != m_meshIndexTable.end())
+	auto iterFind = m_meshDatas.find(geomData->GetUID());
+	if (iterFind != m_meshDatas.end())
 	{
-		if (iterIdxFind->second < m_meshDatas.size())
+		uint32_t removeIndex = GetMeshBindIndex(geomData);
+		if (iterFind->second != nullptr)
 		{
-			m_meshDatas[iterIdxFind->second]->Unload();
-			delete m_meshDatas[iterIdxFind->second];
-			m_meshDatas.erase(m_meshDatas.begin() + iterIdxFind->second);
-			RefreshIndexTable();
+			iterFind->second->Unload();
+			delete iterFind->second;
+			m_meshDatas.erase(iterFind);
 		}
-		OnMeshUnloaded.Exec(iterIdxFind->second);
-	}
-}
-
-void GeometryContainer::RefreshIndexTable()
-{
-	auto iterGeomFind = m_geomIndexTable.end();
-	for (int i = 0; i < m_geomDatas.size(); i++)
-	{
-		iterGeomFind = m_geomIndexTable.find(m_geomDatas[i]->GetUID());
-		if (iterGeomFind != m_geomIndexTable.end())
-		{
-			iterGeomFind->second = i;
-		}
-	}
-
-	auto iterMeshFind = m_meshIndexTable.end();
-	for (int i = 0; i < m_meshDatas.size(); i++)
-	{
-		iterMeshFind = m_meshIndexTable.find(m_meshDatas[i]->GetUID());
-		if (iterMeshFind != m_meshIndexTable.end())
-		{
-			iterMeshFind->second = i;
-		}
+		OnMeshUnloaded.Exec(removeIndex);
 	}
 }

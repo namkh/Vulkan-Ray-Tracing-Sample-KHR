@@ -3,6 +3,7 @@
 #include "SimpleShader.h"
 #include "Singleton.h"
 
+#include <unordered_map>
 
 class SimpleShader;
 
@@ -37,8 +38,7 @@ private:
 	//rgen shader + miss shader + hit shaders
 	//따로관리 되어야한다.
 	std::map<std::string, UID> m_keyTable;
-	std::map<UID, uint32_t> m_indexTable;
-	std::map<ERTShaderGroupType, std::vector<SimpleShader*> > m_shaderList;
+	std::unordered_map<ERTShaderGroupType, std::unordered_map<UID, SimpleShader*> > m_shaderDatas;
 };
 
 #define gShaderContainer ShaderContainer::Instance()
@@ -85,13 +85,12 @@ public:
 	RtHitShaderGroup* GetHitGroup(int index);
 
 protected:
-	void RefreshIndexTable();
 	HitGroupKey GetKeyFromGroup(RtHitShaderGroup* group);
 
 private:
 
-	std::map<HitGroupKey, uint32_t> m_indexTable;
-	std::vector<RtHitShaderGroup> m_hitGroupList;
+	std::map<HitGroupKey, UID> m_keyTable;
+	std::unordered_map<UID, RtHitShaderGroup*> m_hitGroupList;
 };
 
 #define gHitGroupContainer RayHitGroupContainer::Instance()

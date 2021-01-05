@@ -74,7 +74,7 @@ bool BottomLevelAS::Build(VkCommandBuffer commandBuffer, bool update)
 			&asBuildSizeInfo
 		);
 
-		if (!m_asMemory.Initialize(asBuildSizeInfo.accelerationStructureSize, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT))
+		if (!m_asMemory.Initialize(static_cast<uint32_t>(asBuildSizeInfo.accelerationStructureSize), VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT))
 		{
 			return false;
 		}
@@ -91,7 +91,7 @@ bool BottomLevelAS::Build(VkCommandBuffer commandBuffer, bool update)
 			return false;
 		}
 
-		if (!m_scratchBuffer.Initialize(asBuildSizeInfo.buildScratchSize, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT))
+		if (!m_scratchBuffer.Initialize(static_cast<uint32_t>(asBuildSizeInfo.buildScratchSize), VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT))
 		{
 			return false;
 		}
@@ -446,7 +446,7 @@ bool TopLevelAS::Build(VkCommandBuffer commandBuffer, std::vector<BottomLevelAsG
 		{
 			m_asMemory.Destroy();
 		}
-		if (!m_asMemory.Initialize(asBuildSizeInfo.accelerationStructureSize, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT))
+		if (!m_asMemory.Initialize(static_cast<uint32_t>(asBuildSizeInfo.accelerationStructureSize), VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT))
 		{
 			return false;
 		}
@@ -467,7 +467,7 @@ bool TopLevelAS::Build(VkCommandBuffer commandBuffer, std::vector<BottomLevelAsG
 		{
 			m_scratchBuffer.Destroy();
 		}
-		if (!m_scratchBuffer.Initialize(asBuildSizeInfo.buildScratchSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT))
+		if (!m_scratchBuffer.Initialize(static_cast<uint32_t>(asBuildSizeInfo.buildScratchSize), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT))
 		{
 			return false;
 		}
